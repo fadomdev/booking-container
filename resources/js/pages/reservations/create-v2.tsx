@@ -30,7 +30,7 @@ import {
     validateContainerNumber,
 } from '@/lib/container-validator';
 import { TimeSlot } from '@/types';
-import { Head, router, useForm, usePage } from '@inertiajs/react';
+import { Head, useForm, usePage } from '@inertiajs/react';
 import {
     AlertCircle,
     Calendar,
@@ -63,7 +63,6 @@ export default function CreateReservation({
     // Wizard steps state
     const [currentStep, setCurrentStep] = useState(1);
     const totalSteps = 4;
-    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const [bookingValidation, setBookingValidation] = useState<{
         valid: boolean | null;
@@ -288,11 +287,10 @@ export default function CreateReservation({
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
 
-        if (processing || bookingValidation.validating || isSubmitting) {
+        if (processing || bookingValidation.validating) {
             return;
         }
 
-        setIsSubmitting(true);
         clearErrors();
 
         let apiNotes = '';
@@ -362,8 +360,6 @@ export default function CreateReservation({
             setCreatedReservation(page.props.flash.reservation);
             setShowSuccessModal(true);
             savePlateToHistory(page.props.flash.reservation.truck_plate);
-            // Reset submitting state
-            setIsSubmitting(false);
         }
     }, [page.props.flash, savePlateToHistory]);
 
@@ -375,17 +371,6 @@ export default function CreateReservation({
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [data.slots_requested]);
-
-    // Reset slots and containers when date or time changes
-    useEffect(() => {
-        // Reset to 1 slot and empty container
-        setData((prev) => ({
-            ...prev,
-            slots_requested: 1,
-            container_numbers: [''],
-        }));
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [data.reservation_date, data.reservation_time]);
 
     const selectedSlot = timeSlots.find(
         (slot) => slot.time === data.reservation_time,
@@ -479,10 +464,7 @@ export default function CreateReservation({
 
                 <StepIndicator />
 
-                <form
-                    onSubmit={(e) => e.preventDefault()}
-                    className="space-y-6"
-                >
+                <form onSubmit={handleSubmit} className="space-y-6">
                     {/* Step 1: Date and Time */}
                     {currentStep === 1 && (
                         <Card>
@@ -555,10 +537,10 @@ export default function CreateReservation({
                                                         disabled={!hasCapacity}
                                                         className={`relative rounded-lg border-2 p-4 text-left transition-all ${
                                                             isSelected
-                                                                ? 'border-blue-500 bg-blue-50 shadow-md'
+                                                                ? 'border-primary bg-primary/5'
                                                                 : hasCapacity
-                                                                  ? 'border-gray-300 bg-white hover:border-blue-400 hover:bg-blue-50/50 hover:shadow-sm'
-                                                                  : 'cursor-not-allowed border-gray-200 bg-gray-100 opacity-50'
+                                                                  ? 'border-gray-200 hover:border-primary/50'
+                                                                  : 'border-gray-100 bg-gray-50 opacity-60'
                                                         }`}
                                                     >
                                                         <div className="flex items-center justify-between">
@@ -571,14 +553,11 @@ export default function CreateReservation({
                                                         </div>
                                                         <div className="mt-2 flex items-center gap-2 text-sm">
                                                             <Badge
-                                                                className={
-                                                                    isSelected
-                                                                        ? 'bg-blue-600 text-white'
-                                                                        : hasCapacity
-                                                                          ? 'border-green-300 bg-green-100 text-green-800'
-                                                                          : 'border-red-300 bg-red-100 text-red-800'
+                                                                variant={
+                                                                    hasCapacity
+                                                                        ? 'default'
+                                                                        : 'secondary'
                                                                 }
-                                                                variant="outline"
                                                             >
                                                                 {
                                                                     slot.available_capacity
@@ -771,26 +750,12 @@ export default function CreateReservation({
                                             <SelectValue placeholder="Selecciona cantidad de cupos" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {selectedSlot &&
-                                                Array.from(
-                                                    {
-                                                        length: Math.min(
-                                                            selectedSlot.available_capacity,
-                                                            2,
-                                                        ),
-                                                    },
-                                                    (_, i) => i + 1,
-                                                ).map((num) => (
-                                                    <SelectItem
-                                                        key={num}
-                                                        value={num.toString()}
-                                                    >
-                                                        {num}{' '}
-                                                        {num === 1
-                                                            ? 'cupo'
-                                                            : 'cupos'}
-                                                    </SelectItem>
-                                                ))}
+                                            <SelectItem value="1">
+                                                1 cupo
+                                            </SelectItem>
+                                            <SelectItem value="2">
+                                                2 cupos
+                                            </SelectItem>
                                         </SelectContent>
                                     </Select>
                                     {selectedSlot && (
@@ -900,16 +865,13 @@ export default function CreateReservation({
                                                 </span>
                                                 <span className="font-medium">
                                                     {new Date(
-                                                        data.reservation_date +
-                                                            'T00:00:00',
+                                                        data.reservation_date,
                                                     ).toLocaleDateString(
                                                         'es-CL',
                                                         {
                                                             day: '2-digit',
                                                             month: 'long',
                                                             year: 'numeric',
-                                                            timeZone:
-                                                                'America/Santiago',
                                                         },
                                                     )}
                                                 </span>
@@ -1024,16 +986,10 @@ export default function CreateReservation({
                             </Button>
                         ) : (
                             <Button
-                                type="button"
-                                onClick={(e) => {
-                                    e.preventDefault();
-                                    handleSubmit(e as unknown as FormEvent);
-                                }}
-                                disabled={
-                                    processing || isBlocked || isSubmitting
-                                }
+                                type="submit"
+                                disabled={processing || isBlocked}
                             >
-                                {processing || isSubmitting ? (
+                                {processing ? (
                                     <>
                                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                         Creando reserva...
@@ -1089,116 +1045,69 @@ export default function CreateReservation({
 
             {/* Success Modal */}
             <Dialog open={showSuccessModal} onOpenChange={setShowSuccessModal}>
-                <DialogContent className="sm:max-w-lg">
+                <DialogContent className="sm:max-w-md">
                     <DialogHeader>
-                        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
-                            <CheckCircle2 className="h-8 w-8 text-green-600" />
+                        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
+                            <CheckCircle2 className="h-6 w-6 text-green-600" />
                         </div>
-                        <DialogTitle className="text-center text-2xl">
+                        <DialogTitle className="text-center">
                             ¡Reserva Creada Exitosamente!
                         </DialogTitle>
                         <DialogDescription className="text-center">
-                            Tu reserva ha sido confirmada. A continuación los
-                            detalles:
+                            Tu reserva ha sido confirmada
                         </DialogDescription>
                     </DialogHeader>
                     {createdReservation && (
                         <div className="space-y-4">
-                            {/* Fecha y Hora destacada */}
-                            <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 text-center">
-                                <div className="mb-1 text-sm font-medium text-blue-600">
-                                    Fecha y Hora de la Reserva
-                                </div>
-                                <div className="text-2xl font-bold text-blue-900">
-                                    {new Date(
-                                        createdReservation.reservation_date +
-                                            'T00:00:00',
-                                    ).toLocaleDateString('es-CL', {
-                                        day: '2-digit',
-                                        month: 'long',
-                                        year: 'numeric',
-                                        timeZone: 'America/Santiago',
-                                    })}
-                                </div>
-                                <div className="mt-1 text-xl font-semibold text-blue-700">
-                                    {createdReservation.reservation_time}
-                                </div>
-                            </div>
-
-                            {/* Detalles de la reserva */}
-                            <div className="rounded-lg border bg-muted/50 p-4">
-                                <h4 className="mb-3 text-sm font-semibold text-muted-foreground uppercase">
-                                    Detalles de la Reserva
-                                </h4>
-                                <dl className="space-y-3">
-                                    <div className="flex items-center justify-between border-b py-2">
-                                        <dt className="flex items-center gap-2 text-sm text-muted-foreground">
-                                            <Package className="h-4 w-4" />
-                                            Booking:
+                            <div className="rounded-lg bg-muted p-4">
+                                <dl className="space-y-2 text-sm">
+                                    <div className="flex justify-between">
+                                        <dt className="text-muted-foreground">
+                                            Fecha:
                                         </dt>
-                                        <dd className="font-mono text-sm font-semibold">
-                                            {createdReservation.booking_number}
+                                        <dd className="font-medium">
+                                            {new Date(
+                                                createdReservation.reservation_date,
+                                            ).toLocaleDateString('es-CL')}
                                         </dd>
                                     </div>
-                                    <div className="flex items-center justify-between border-b py-2">
-                                        <dt className="text-sm text-muted-foreground">
-                                            Transportista:
+                                    <div className="flex justify-between">
+                                        <dt className="text-muted-foreground">
+                                            Hora:
                                         </dt>
-                                        <dd className="text-sm font-medium">
+                                        <dd className="font-medium">
                                             {
-                                                createdReservation.transporter_name
+                                                createdReservation.reservation_time
                                             }
                                         </dd>
                                     </div>
-                                    <div className="flex items-center justify-between border-b py-2">
-                                        <dt className="text-sm text-muted-foreground">
+                                    <div className="flex justify-between">
+                                        <dt className="text-muted-foreground">
+                                            Booking:
+                                        </dt>
+                                        <dd className="font-medium">
+                                            {createdReservation.booking_number}
+                                        </dd>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <dt className="text-muted-foreground">
                                             Patente:
                                         </dt>
-                                        <dd className="font-mono text-sm font-semibold">
+                                        <dd className="font-medium">
                                             {createdReservation.truck_plate}
                                         </dd>
                                     </div>
-                                    <div className="flex items-start justify-between py-2">
-                                        <dt className="text-sm text-muted-foreground">
-                                            Cupos:
+                                    <div className="flex justify-between">
+                                        <dt className="text-muted-foreground">
+                                            Contenedores:
                                         </dt>
-                                        <dd className="text-sm font-medium">
-                                            {createdReservation.slots_reserved}{' '}
-                                            {createdReservation.slots_reserved ===
-                                            1
-                                                ? 'cupo'
-                                                : 'cupos'}
+                                        <dd className="font-medium">
+                                            {createdReservation.container_numbers.join(
+                                                ', ',
+                                            )}
                                         </dd>
                                     </div>
                                 </dl>
-                            </div>
-
-                            {/* Contenedores */}
-                            <div className="rounded-lg border bg-green-50 p-4">
-                                <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold text-green-900">
-                                    <CheckCircle2 className="h-4 w-4" />
-                                    Contenedores Registrados
-                                </h4>
-                                <div className="space-y-2">
-                                    {createdReservation.container_numbers.map(
-                                        (container, idx) => (
-                                            <div
-                                                key={idx}
-                                                className="flex items-center gap-2 rounded border border-green-200 bg-white px-3 py-2"
-                                            >
-                                                <Badge
-                                                    className="bg-green-600 text-white"
-                                                    variant="default"
-                                                >
-                                                    {idx + 1}
-                                                </Badge>
-                                                <span className="font-mono text-sm font-semibold">
-                                                    {container}
-                                                </span>
-                                            </div>
-                                        ),
-                                    )}
-                                </div>
                             </div>
                         </div>
                     )}
@@ -1206,8 +1115,7 @@ export default function CreateReservation({
                         <Button
                             onClick={() => {
                                 setShowSuccessModal(false);
-                                // Usar router.visit de Inertia para navegación SPA
-                                router.visit('/reservations/my-reservations');
+                                window.location.href = '/reservations/my';
                             }}
                         >
                             Ver Mis Reservas
