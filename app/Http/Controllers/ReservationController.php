@@ -546,8 +546,7 @@ class ReservationController extends Controller
         }
 
         $reservations = $query
-            ->orderBy('reservation_date', 'desc')
-            ->orderBy('reservation_time', 'desc')
+            ->orderBy('created_at', 'desc')
             ->paginate(15);
 
         return Inertia::render('reservations/my-reservations', [
