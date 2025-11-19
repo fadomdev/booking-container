@@ -30,7 +30,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/', [ReservationController::class, 'store'])->name('store');
         Route::get('/my-reservations', [ReservationController::class, 'myReservations'])->name('my-reservations');
         Route::post('/{reservation}/cancel', [ReservationController::class, 'cancel'])->name('cancel');
-        Route::post('/verify-booking', [ReservationController::class, 'verifyBooking'])->name('verify-booking');
         Route::post('/validate-booking', [ReservationController::class, 'validateBooking'])->name('validate-booking');
         Route::post('/send-containers', [ReservationController::class, 'sendContainersToApi'])->name('send-containers');
     });

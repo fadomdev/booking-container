@@ -60,19 +60,4 @@ class BlockedDate extends Model
             ->where('is_active', true)
             ->first();
     }
-
-    /**
-     * Get type label in Spanish.
-     *
-     * @return string
-     */
-    public function getTypeLabel(): string
-    {
-        return match ($this->type) {
-            'holiday' => 'Día Festivo',
-            'maintenance' => 'Mantenimiento',
-            'other' => 'Otro',
-            default => 'Otro',
-        };
-    }
 }

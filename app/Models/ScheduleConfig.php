@@ -78,28 +78,4 @@ class ScheduleConfig extends Model
 
         return $slots;
     }
-
-    /**
-     * Get the Spanish name for this day of week.
-     *
-     * @return string
-     */
-    public function getDayName(): string
-    {
-        $dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-        return $dayNames[$this->day_of_week] ?? '';
-    }
-
-    /**
-     * Get configuration for a specific day of week.
-     *
-     * @param int $dayOfWeek 0=Sunday, 1=Monday, etc.
-     * @return ScheduleConfig|null
-     */
-    public static function getForDay(int $dayOfWeek): ?ScheduleConfig
-    {
-        return self::where('day_of_week', $dayOfWeek)
-            ->where('is_active', true)
-            ->first();
-    }
 }

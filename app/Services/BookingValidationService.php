@@ -181,16 +181,4 @@ class BookingValidationService
             ];
         }
     }
-
-    /**
-     * Get booking details from external API
-     * 
-     * @param string $bookingNumber
-     * @return array|null
-     */
-    public function getBookingDetails(string $bookingNumber): ?array
-    {
-        $result = $this->validateBooking($bookingNumber);
-        return $result['data'] ?? null;
-    }
 }

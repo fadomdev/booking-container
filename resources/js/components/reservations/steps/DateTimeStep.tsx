@@ -45,13 +45,14 @@ export const DateTimeStep = ({
             </CardHeader>
             <CardContent className="space-y-6">
                 {/* Date Selection */}
-                <div className="space-y-2">
-                    <Label htmlFor="reservation_date">Fecha de Reserva *</Label>
+                <div className="space-y-3">
+                    <Label htmlFor="reservation_date" className="text-base font-semibold">Fecha de Reserva *</Label>
                     <Input
                         id="reservation_date"
                         type="date"
                         value={data.reservation_date}
                         onChange={(e) => onDateChange(e.target.value)}
+                        className="h-14 text-base px-4 border-2 focus:border-[#FFCC00] focus:ring-[#FFCC00]"
                     />
                     {errors.reservation_date && (
                         <p className="text-sm text-destructive">
@@ -88,11 +89,11 @@ export const DateTimeStep = ({
                                             onTimeSelect(slot.time)
                                         }
                                         disabled={!hasCapacity}
-                                        className={`relative rounded-lg border-2 p-4 text-left transition-all ${
+                                        className={`relative rounded-lg border-2 p-5 text-left transition-all ${
                                             isSelected
-                                                ? 'border-blue-500 bg-blue-50 shadow-md'
+                                                ? 'border-[#FFCC00] bg-[#FFCC00]/20 shadow-lg ring-2 ring-[#FFCC00]/50'
                                                 : hasCapacity
-                                                  ? 'border-gray-300 bg-white hover:border-blue-400 hover:bg-blue-50/50 hover:shadow-sm'
+                                                  ? 'border-gray-300 bg-white hover:border-[#FFCC00] hover:bg-[#FFCC00]/10 hover:shadow-md'
                                                   : 'cursor-not-allowed border-gray-200 bg-gray-100 opacity-50'
                                         }`}
                                     >
@@ -108,10 +109,10 @@ export const DateTimeStep = ({
                                             <Badge
                                                 className={
                                                     isSelected
-                                                        ? 'bg-blue-600 text-white'
+                                                        ? 'bg-[#FFCC00] text-black font-semibold border-[#FFCC00]'
                                                         : hasCapacity
                                                           ? 'border-green-300 bg-green-100 text-green-800'
-                                                          : 'border-red-300 bg-red-100 text-red-800'
+                                                          : 'border-[#D40511] bg-[#D40511]/10 text-[#D40511]'
                                                 }
                                                 variant="outline"
                                             >

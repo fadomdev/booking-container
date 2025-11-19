@@ -449,83 +449,7 @@ class ReservationController extends Controller
         });
     }
 
-    /**
-     * Send container data to external API.
-     */
-    private function sendContainersToExternalApi(Reservation $reservation, $user)
-    {
-        try {
-            // Load company and booking relationships if not loaded
-            if (!$user->relationLoaded('company')) {
-                $user->load('company');
-            }
 
-            if (!$reservation->relationLoaded('booking')) {
-                $reservation->load('booking');
-            }
-
-            // Get company name
-            $companyName = $user->company ? $user->company->name : 'Sin empresa';
-
-            // Get booking number
-            $bookingNumber = $reservation->booking ? $reservation->booking->booking_number : '';
-
-            // Prepare data for each container
-            foreach ($reservation->container_numbers as $containerNumber) {
-                $data = [
-                    'action' => 'crear_contenedor',
-                    'codigo' => $containerNumber,
-                    'booking' => $bookingNumber,
-                    'empresa' => $companyName,
-                    'nombre_conductor' => $reservation->transportista_name,
-                    'patente' => $reservation->truck_plate,
-                    'empresa_transporte' => $companyName,
-                    'usuario_id' => $user->id,
-                    // Campos opcionales para sello y flexitank
-                    'sello' => '',
-                    'sello_armado' => '',
-                    'tipo_flexi' => '',
-                    'numero_flexi' => '',
-                    'sello_flexi' => '',
-                    'rut_conductor' => '',
-                    'telefono_conductor' => '',
-                ];
-
-                // Send to external API
-                $response = Http::timeout(10)->post(
-                    config('services.booking_api.url'),
-                    $data
-                );
-
-                // Check if response was successful
-                $responseData = $response->json();
-
-                if ($response->successful() && isset($responseData['success']) && $responseData['success']) {
-                    Log::info('Container successfully sent to external API', [
-                        'reservation_id' => $reservation->id,
-                        'container' => $containerNumber,
-                        'booking' => $bookingNumber,
-                        'response' => $responseData,
-                    ]);
-                } else {
-                    Log::warning('External API returned error for container', [
-                        'reservation_id' => $reservation->id,
-                        'container' => $containerNumber,
-                        'booking' => $bookingNumber,
-                        'status' => $response->status(),
-                        'response' => $responseData,
-                    ]);
-                }
-            }
-        } catch (\Exception $e) {
-            // Log error but don't fail the reservation
-            Log::error('Failed to send containers to external API', [
-                'reservation_id' => $reservation->id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-        }
-    }
 
     /**
      * Display user's reservations.
@@ -613,24 +537,5 @@ class ReservationController extends Controller
         }
 
         return back()->with('success', 'Reserva anulada exitosamente.');
-    }
-
-    /**
-     * Verify if a booking number exists.
-     */
-    public function verifyBooking(Request $request)
-    {
-        $validated = $request->validate([
-            'booking_number' => ['required', 'string'],
-        ]);
-
-        $booking = Booking::where('booking_number', $validated['booking_number'])
-            ->where('is_active', true)
-            ->first();
-
-        return response()->json([
-            'exists' => $booking !== null,
-            'can_book_multiple' => $booking !== null,
-        ]);
     }
 }

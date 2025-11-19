@@ -335,14 +335,15 @@ export default function CreateReservation({
                     )}
 
                     {/* Navigation Buttons */}
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between pt-4">
                         <Button
                             type="button"
                             variant="outline"
                             onClick={handlePreviousStep}
                             disabled={currentStep === 1 || processing}
+                            className="h-12 px-6 border-2 border-gray-300 hover:border-[#FFCC00] hover:bg-[#FFCC00]/10"
                         >
-                            <ChevronLeft className="mr-2 h-4 w-4" />
+                            <ChevronLeft className="mr-2 h-5 w-5" />
                             Anterior
                         </Button>
 
@@ -355,9 +356,10 @@ export default function CreateReservation({
                                     isBlocked ||
                                     processing
                                 }
+                                className="h-12 px-8 bg-[#FFCC00] hover:bg-[#FFCC00]/90 text-black font-semibold text-base"
                             >
                                 Siguiente
-                                <ChevronRight className="ml-2 h-4 w-4" />
+                                <ChevronRight className="ml-2 h-5 w-5" />
                             </Button>
                         ) : (
                             <Button
@@ -369,10 +371,11 @@ export default function CreateReservation({
                                 disabled={
                                     processing || isBlocked || isSubmitting
                                 }
+                                className="h-12 px-8 bg-[#D40511] hover:bg-[#D40511]/90 text-white font-semibold text-base shadow-lg"
                             >
                                 {processing || isSubmitting ? (
                                     <>
-                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                                         Creando reserva...
                                     </>
                                 ) : (

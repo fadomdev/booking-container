@@ -51,30 +51,4 @@ class TimeSlot extends Model
     {
         return $this->hasMany(Reservation::class)->where('status', 'active');
     }
-
-    /**
-     * Check if slot has available capacity.
-     */
-    public function hasCapacity(int $requestedSlots = 1): bool
-    {
-        return $this->is_active && $this->available_capacity >= $requestedSlots;
-    }
-
-    /**
-     * Decrease available capacity.
-     */
-    public function decreaseCapacity(int $slots = 1): void
-    {
-        $this->available_capacity = max(0, $this->available_capacity - $slots);
-        $this->save();
-    }
-
-    /**
-     * Increase available capacity.
-     */
-    public function increaseCapacity(int $slots = 1): void
-    {
-        $this->available_capacity = min($this->total_capacity, $this->available_capacity + $slots);
-        $this->save();
-    }
 }

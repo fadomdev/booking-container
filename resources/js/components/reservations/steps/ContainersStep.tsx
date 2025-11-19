@@ -57,15 +57,15 @@ export const ContainersStep = ({
             </CardHeader>
             <CardContent className="space-y-6">
                 {/* Slots Selection */}
-                <div className="space-y-2">
-                    <Label htmlFor="slots_requested">Cantidad de Cupos *</Label>
+                <div className="space-y-3">
+                    <Label htmlFor="slots_requested" className="text-base font-semibold">Cantidad de Cupos *</Label>
                     <Select
                         value={data.slots_requested.toString()}
                         onValueChange={(value) =>
                             onSlotsChange(parseInt(value))
                         }
                     >
-                        <SelectTrigger>
+                        <SelectTrigger className="h-14 text-base border-2 focus:border-[#FFCC00] focus:ring-[#FFCC00]">
                             <SelectValue placeholder="Selecciona cantidad de cupos" />
                         </SelectTrigger>
                         <SelectContent>
@@ -97,8 +97,8 @@ export const ContainersStep = ({
                 </div>
 
                 {/* Container Numbers */}
-                <div className="space-y-3">
-                    <Label>
+                <div className="space-y-4">
+                    <Label className="text-base font-semibold">
                         Números de Contenedor * ({data.slots_requested}{' '}
                         {data.slots_requested === 1
                             ? 'contenedor'
@@ -107,7 +107,7 @@ export const ContainersStep = ({
                     </Label>
                     {data.container_numbers.map((container, index) => (
                         <div key={index} className="space-y-2">
-                            <Label htmlFor={`container_${index}`}>
+                            <Label htmlFor={`container_${index}`} className="text-sm font-medium">
                                 Contenedor {index + 1}
                             </Label>
                             <Input
@@ -121,6 +121,7 @@ export const ContainersStep = ({
                                 }
                                 placeholder="Ej: EMCU8854404"
                                 maxLength={CONTAINER_INPUT_MAX_LENGTH}
+                                className="h-14 text-base px-4 border-2 focus:border-[#FFCC00] focus:ring-[#FFCC00] font-mono"
                             />
                             {(() => {
                                 const validation =

@@ -61,9 +61,9 @@ export const BookingDataStep = ({
             </CardHeader>
             <CardContent className="space-y-6">
                 {/* Booking Number */}
-                <div className="space-y-2">
-                    <Label htmlFor="booking_number">Número de Booking *</Label>
-                    <div className="flex gap-2">
+                <div className="space-y-3">
+                    <Label htmlFor="booking_number" className="text-base font-semibold">Número de Booking *</Label>
+                    <div className="flex gap-3">
                         <Input
                             id="booking_number"
                             value={data.booking_number}
@@ -74,16 +74,17 @@ export const BookingDataStep = ({
                                 )
                             }
                             onBlur={onValidateBooking}
-                            placeholder="Ej: 070ISA1201298"
-                            className="flex-1"
+                            placeholder="INGRESE NÚMERO DE BOOKING (EJ: BK-123456)"
+                            className="flex-1 h-14 text-base px-4 border-2 focus:border-[#FFCC00] focus:ring-[#FFCC00]"
                         />
                         <Button
                             type="button"
                             onClick={onValidateBooking}
                             disabled={bookingValidation.validating}
+                            className="h-14 px-6 bg-[#FFCC00] hover:bg-[#FFCC00]/90 text-black font-semibold"
                         >
                             {bookingValidation.validating ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
+                                <Loader2 className="h-5 w-5 animate-spin" />
                             ) : (
                                 'Validar'
                             )}
@@ -113,8 +114,8 @@ export const BookingDataStep = ({
                 </div>
 
                 {/* Transporter Name */}
-                <div className="space-y-2">
-                    <Label htmlFor="transporter_name">
+                <div className="space-y-3">
+                    <Label htmlFor="transporter_name" className="text-base font-semibold">
                         Nombre del Transportista *
                     </Label>
                     <Input
@@ -123,7 +124,8 @@ export const BookingDataStep = ({
                         onChange={(e) =>
                             onDataChange('transporter_name', e.target.value)
                         }
-                        placeholder="Ej: Juan Pérez"
+                        placeholder="Nombre completo"
+                        className="h-14 text-base px-4 border-2 focus:border-[#FFCC00] focus:ring-[#FFCC00]"
                     />
                     {errors.transporter_name && (
                         <p className="text-sm text-destructive">
@@ -133,9 +135,9 @@ export const BookingDataStep = ({
                 </div>
 
                 {/* Truck Plate */}
-                <div className="space-y-2">
+                <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                        <Label htmlFor="truck_plate">
+                        <Label htmlFor="truck_plate" className="text-base font-semibold">
                             Patente del Camión *
                         </Label>
                         {plateHistory.length > 0 && (
@@ -144,6 +146,7 @@ export const BookingDataStep = ({
                                 variant="outline"
                                 size="sm"
                                 onClick={onShowPlateHistory}
+                                className="border-[#FFCC00] text-black hover:bg-[#FFCC00]/10"
                             >
                                 <History className="mr-2 h-4 w-4" />
                                 Historial
@@ -159,8 +162,9 @@ export const BookingDataStep = ({
                                 e.target.value.toUpperCase(),
                             )
                         }
-                        placeholder="Ej: ABCD12"
+                        placeholder="AA-BB-12"
                         maxLength={PLATE_INPUT_MAX_LENGTH}
+                        className="h-14 text-base px-4 border-2 focus:border-[#FFCC00] focus:ring-[#FFCC00]"
                     />
                     {errors.truck_plate && (
                         <p className="text-sm text-destructive">
