@@ -1,0 +1,416 @@
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
+import { Textarea } from '@/components/ui/textarea';
+import AppLayout from '@/layouts/app-layout';
+import { PaginatedData, Reservation } from '@/types';
+import { Head, Link, router, useForm } from '@inertiajs/react';
+import { Filter, XCircle } from 'lucide-react';
+import { useState } from 'react';
+
+interface Props {
+    reservations: PaginatedData<Reservation>;
+    filters?: {
+        status?: string;
+        date?: string;
+    };
+}
+
+export default function MyReservations({ reservations, filters = {} }: Props) {
+    const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+    const [selectedReservation, setSelectedReservation] =
+        useState<Reservation | null>(null);
+    const [filterDate, setFilterDate] = useState(filters.date || '');
+    const [filterStatus, setFilterStatus] = useState(filters.status || 'all');
+
+    const { data, setData, post, processing, reset } = useForm({
+        cancellation_comment: '',
+    });
+
+    const openCancelDialog = (reservation: Reservation) => {
+        setSelectedReservation(reservation);
+        setCancelDialogOpen(true);
+        reset();
+    };
+
+    const handleCancel = () => {
+        if (!selectedReservation) return;
+
+        post(`/reservations/${selectedReservation.id}/cancel`, {
+            onSuccess: () => {
+                setCancelDialogOpen(false);
+                setSelectedReservation(null);
+                reset();
+            },
+        });
+    };
+
+    const applyFilters = () => {
+        const params = new URLSearchParams();
+        if (filterDate) params.set('date', filterDate);
+        if (filterStatus && filterStatus !== 'all')
+            params.set('status', filterStatus);
+
+        router.get(`/reservations/my-reservations?${params.toString()}`);
+    };
+
+    const clearFilters = () => {
+        setFilterDate('');
+        setFilterStatus('all');
+        router.get('/reservations/my-reservations');
+    };
+
+    return (
+        <AppLayout>
+            <Head title="Mis Reservas" />
+
+            <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h1 className="text-3xl font-bold tracking-tight">
+                            Mis Reservas
+                        </h1>
+                        <p className="text-muted-foreground">
+                            Consulta y administra tus reservas de horarios
+                        </p>
+                    </div>
+                    <Button asChild>
+                        <Link href="/reservations">+ Nueva Reserva</Link>
+                    </Button>
+                </div>
+
+                {/* Filtros */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <Filter className="h-5 w-5" />
+                            Filtros
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="flex flex-wrap items-end gap-4">
+                            <div className="min-w-[200px] flex-1 space-y-2">
+                                <label className="text-sm font-medium">
+                                    Fecha
+                                </label>
+                                <Input
+                                    type="date"
+                                    value={filterDate}
+                                    onChange={(e) =>
+                                        setFilterDate(e.target.value)
+                                    }
+                                    placeholder="Filtrar por fecha"
+                                />
+                            </div>
+                            <div className="min-w-[200px] flex-1 space-y-2">
+                                <label className="text-sm font-medium">
+                                    Estado
+                                </label>
+                                <Select
+                                    value={filterStatus}
+                                    onValueChange={setFilterStatus}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">
+                                            Todas
+                                        </SelectItem>
+                                        <SelectItem value="active">
+                                            Activas
+                                        </SelectItem>
+                                        <SelectItem value="cancelled">
+                                            Canceladas
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="flex gap-2">
+                                <Button onClick={applyFilters}>Aplicar</Button>
+                                <Button
+                                    variant="outline"
+                                    onClick={clearFilters}
+                                >
+                                    Limpiar
+                                </Button>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {reservations.data.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-12">
+                        <p className="mb-4 text-sm text-muted-foreground">
+                            No tienes reservas
+                        </p>
+                        <Button asChild>
+                            <Link href="/reservations">Nueva Reserva</Link>
+                        </Button>
+                    </div>
+                ) : (
+                    <>
+                        <div className="rounded-md border">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Fecha</TableHead>
+                                        <TableHead>Hora</TableHead>
+                                        <TableHead>Transportista</TableHead>
+                                        <TableHead>Patente</TableHead>
+                                        <TableHead>Booking</TableHead>
+                                        <TableHead>Cupos</TableHead>
+                                        <TableHead>Contenedores</TableHead>
+                                        <TableHead>Estado</TableHead>
+                                        <TableHead>Creada</TableHead>
+                                        <TableHead>Acciones</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {reservations.data.map((reservation) => (
+                                        <TableRow key={reservation.id}>
+                                            <TableCell>
+                                                {reservation.reservation_date &&
+                                                    new Date(
+                                                        reservation.reservation_date,
+                                                    ).toLocaleDateString(
+                                                        'es-CL',
+                                                    )}
+                                            </TableCell>
+                                            <TableCell>
+                                                {reservation.reservation_time}
+                                            </TableCell>
+                                            <TableCell>
+                                                {reservation.transportista_name}
+                                            </TableCell>
+                                            <TableCell className="uppercase">
+                                                {reservation.truck_plate}
+                                            </TableCell>
+                                            <TableCell>
+                                                {
+                                                    reservation.booking
+                                                        ?.booking_number
+                                                }
+                                            </TableCell>
+                                            <TableCell>
+                                                {reservation.slots_reserved}
+                                            </TableCell>
+                                            <TableCell>
+                                                {reservation.container_numbers &&
+                                                reservation.container_numbers
+                                                    .length > 0 ? (
+                                                    <div className="flex flex-col gap-1 font-mono text-xs">
+                                                        {reservation.container_numbers.map(
+                                                            (
+                                                                container,
+                                                                idx,
+                                                            ) => (
+                                                                <div key={idx}>
+                                                                    {container}
+                                                                </div>
+                                                            ),
+                                                        )}
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-muted-foreground">
+                                                        -
+                                                    </span>
+                                                )}
+                                            </TableCell>
+                                            <TableCell>
+                                                <Badge
+                                                    variant={
+                                                        reservation.status ===
+                                                        'active'
+                                                            ? 'default'
+                                                            : reservation.status ===
+                                                                'completed'
+                                                              ? 'secondary'
+                                                              : 'outline'
+                                                    }
+                                                >
+                                                    {reservation.status ===
+                                                    'active'
+                                                        ? 'Activa'
+                                                        : reservation.status ===
+                                                            'completed'
+                                                          ? 'Completada'
+                                                          : 'Cancelada'}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell className="text-xs text-muted-foreground">
+                                                {reservation.created_at &&
+                                                    new Date(
+                                                        reservation.created_at,
+                                                    ).toLocaleString('es-CL', {
+                                                        day: '2-digit',
+                                                        month: '2-digit',
+                                                        year: 'numeric',
+                                                        hour: '2-digit',
+                                                        minute: '2-digit',
+                                                    })}
+                                            </TableCell>
+                                            <TableCell>
+                                                {reservation.status ===
+                                                    'active' && (
+                                                    <Button
+                                                        variant="destructive"
+                                                        size="icon"
+                                                        className="h-8 w-8"
+                                                        onClick={() =>
+                                                            openCancelDialog(
+                                                                reservation,
+                                                            )
+                                                        }
+                                                        title="Anular reserva"
+                                                    >
+                                                        <XCircle className="h-4 w-4" />
+                                                    </Button>
+                                                )}
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
+
+                        {/* Pagination */}
+                        <div className="flex items-center justify-between">
+                            <p className="text-sm text-muted-foreground">
+                                Mostrando {reservations.from} a{' '}
+                                {reservations.to} de {reservations.total}{' '}
+                                reservas
+                            </p>
+                            <div className="flex gap-2">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() =>
+                                        router.get(
+                                            reservations.prev_page_url || '',
+                                        )
+                                    }
+                                    disabled={!reservations.prev_page_url}
+                                >
+                                    Anterior
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() =>
+                                        router.get(
+                                            reservations.next_page_url || '',
+                                        )
+                                    }
+                                    disabled={!reservations.next_page_url}
+                                >
+                                    Siguiente
+                                </Button>
+                            </div>
+                        </div>
+                    </>
+                )}
+            </div>
+
+            {/* Cancel Dialog */}
+            <Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Anular Reserva</DialogTitle>
+                        <DialogDescription>
+                            ¿Estás seguro de que deseas anular esta reserva?
+                            Esta acción no se puede deshacer.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-4 py-4">
+                        {selectedReservation && (
+                            <div className="rounded-lg border p-4 text-sm">
+                                <p>
+                                    <strong>Fecha:</strong>{' '}
+                                    {selectedReservation.reservation_date &&
+                                        new Date(
+                                            selectedReservation.reservation_date,
+                                        ).toLocaleDateString('es-CL')}
+                                </p>
+                                <p>
+                                    <strong>Hora:</strong>{' '}
+                                    {selectedReservation.reservation_time}
+                                </p>
+                                <p>
+                                    <strong>Booking:</strong>{' '}
+                                    {
+                                        selectedReservation.booking
+                                            ?.booking_number
+                                    }
+                                </p>
+                            </div>
+                        )}
+
+                        <div className="space-y-2">
+                            <Label htmlFor="cancellation_comment">
+                                Motivo de Anulación (opcional)
+                            </Label>
+                            <Textarea
+                                id="cancellation_comment"
+                                placeholder="Ingresa el motivo de la anulación..."
+                                value={data.cancellation_comment}
+                                onChange={(
+                                    e: React.ChangeEvent<HTMLTextAreaElement>,
+                                ) =>
+                                    setData(
+                                        'cancellation_comment',
+                                        e.target.value,
+                                    )
+                                }
+                                rows={3}
+                            />
+                        </div>
+                    </div>
+
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => setCancelDialogOpen(false)}
+                            disabled={processing}
+                        >
+                            Cancelar
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            onClick={handleCancel}
+                            disabled={processing}
+                        >
+                            {processing ? 'Anulando...' : 'Anular Reserva'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </AppLayout>
+    );
+}
