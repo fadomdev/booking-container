@@ -58,14 +58,19 @@ export const ContainersStep = ({
             <CardContent className="space-y-6">
                 {/* Slots Selection */}
                 <div className="space-y-3">
-                    <Label htmlFor="slots_requested" className="text-base font-semibold">Cantidad de Cupos *</Label>
+                    <Label
+                        htmlFor="slots_requested"
+                        className="text-base font-semibold"
+                    >
+                        Cantidad de Cupos *
+                    </Label>
                     <Select
                         value={data.slots_requested.toString()}
                         onValueChange={(value) =>
                             onSlotsChange(parseInt(value))
                         }
                     >
-                        <SelectTrigger className="h-14 text-base border-2 focus:border-[#FFCC00] focus:ring-[#FFCC00]">
+                        <SelectTrigger className="h-14 border-2 text-base focus:border-[#FFCC00] focus:ring-[#FFCC00]">
                             <SelectValue placeholder="Selecciona cantidad de cupos" />
                         </SelectTrigger>
                         <SelectContent>
@@ -107,7 +112,10 @@ export const ContainersStep = ({
                     </Label>
                     {data.container_numbers.map((container, index) => (
                         <div key={index} className="space-y-2">
-                            <Label htmlFor={`container_${index}`} className="text-sm font-medium">
+                            <Label
+                                htmlFor={`container_${index}`}
+                                className="text-sm font-medium"
+                            >
                                 Contenedor {index + 1}
                             </Label>
                             <Input
@@ -121,7 +129,7 @@ export const ContainersStep = ({
                                 }
                                 placeholder="Ej: EMCU8854404"
                                 maxLength={CONTAINER_INPUT_MAX_LENGTH}
-                                className="h-14 text-base px-4 border-2 focus:border-[#FFCC00] focus:ring-[#FFCC00] font-mono"
+                                className="h-14 border-2 px-4 font-mono text-base focus:border-[#FFCC00] focus:ring-[#FFCC00]"
                             />
                             {(() => {
                                 const validation =

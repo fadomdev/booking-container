@@ -341,7 +341,7 @@ export default function CreateReservation({
                             variant="outline"
                             onClick={handlePreviousStep}
                             disabled={currentStep === 1 || processing}
-                            className="h-12 px-6 border-2 border-gray-300 hover:border-[#FFCC00] hover:bg-[#FFCC00]/10"
+                            className="h-12 border-2 border-gray-300 px-6 hover:border-[#FFCC00] hover:bg-[#FFCC00]/10"
                         >
                             <ChevronLeft className="mr-2 h-5 w-5" />
                             Anterior
@@ -356,7 +356,7 @@ export default function CreateReservation({
                                     isBlocked ||
                                     processing
                                 }
-                                className="h-12 px-8 bg-[#FFCC00] hover:bg-[#FFCC00]/90 text-black font-semibold text-base"
+                                className="h-12 bg-[#FFCC00] px-8 text-base font-semibold text-black hover:bg-[#FFCC00]/90"
                             >
                                 Siguiente
                                 <ChevronRight className="ml-2 h-5 w-5" />
@@ -371,7 +371,7 @@ export default function CreateReservation({
                                 disabled={
                                     processing || isBlocked || isSubmitting
                                 }
-                                className="h-12 px-8 bg-[#D40511] hover:bg-[#D40511]/90 text-white font-semibold text-base shadow-lg"
+                                className="h-12 bg-[#D40511] px-8 text-base font-semibold text-white shadow-lg hover:bg-[#D40511]/90"
                             >
                                 {processing || isSubmitting ? (
                                     <>

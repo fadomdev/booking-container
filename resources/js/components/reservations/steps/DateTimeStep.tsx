@@ -46,13 +46,18 @@ export const DateTimeStep = ({
             <CardContent className="space-y-6">
                 {/* Date Selection */}
                 <div className="space-y-3">
-                    <Label htmlFor="reservation_date" className="text-base font-semibold">Fecha de Reserva *</Label>
+                    <Label
+                        htmlFor="reservation_date"
+                        className="text-base font-semibold"
+                    >
+                        Fecha de Reserva *
+                    </Label>
                     <Input
                         id="reservation_date"
                         type="date"
                         value={data.reservation_date}
                         onChange={(e) => onDateChange(e.target.value)}
-                        className="h-14 text-base px-4 border-2 focus:border-[#FFCC00] focus:ring-[#FFCC00]"
+                        className="h-14 border-2 px-4 text-base focus:border-[#FFCC00] focus:ring-[#FFCC00]"
                     />
                     {errors.reservation_date && (
                         <p className="text-sm text-destructive">
@@ -109,7 +114,7 @@ export const DateTimeStep = ({
                                             <Badge
                                                 className={
                                                     isSelected
-                                                        ? 'bg-[#FFCC00] text-black font-semibold border-[#FFCC00]'
+                                                        ? 'border-[#FFCC00] bg-[#FFCC00] font-semibold text-black'
                                                         : hasCapacity
                                                           ? 'border-green-300 bg-green-100 text-green-800'
                                                           : 'border-[#D40511] bg-[#D40511]/10 text-[#D40511]'

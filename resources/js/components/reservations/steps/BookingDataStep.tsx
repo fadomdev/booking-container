@@ -62,7 +62,12 @@ export const BookingDataStep = ({
             <CardContent className="space-y-6">
                 {/* Booking Number */}
                 <div className="space-y-3">
-                    <Label htmlFor="booking_number" className="text-base font-semibold">Número de Booking *</Label>
+                    <Label
+                        htmlFor="booking_number"
+                        className="text-base font-semibold"
+                    >
+                        Número de Booking *
+                    </Label>
                     <div className="flex gap-3">
                         <Input
                             id="booking_number"
@@ -75,13 +80,13 @@ export const BookingDataStep = ({
                             }
                             onBlur={onValidateBooking}
                             placeholder="INGRESE NÚMERO DE BOOKING (EJ: BK-123456)"
-                            className="flex-1 h-14 text-base px-4 border-2 focus:border-[#FFCC00] focus:ring-[#FFCC00]"
+                            className="h-14 flex-1 border-2 px-4 text-base focus:border-[#FFCC00] focus:ring-[#FFCC00]"
                         />
                         <Button
                             type="button"
                             onClick={onValidateBooking}
                             disabled={bookingValidation.validating}
-                            className="h-14 px-6 bg-[#FFCC00] hover:bg-[#FFCC00]/90 text-black font-semibold"
+                            className="h-14 bg-[#FFCC00] px-6 font-semibold text-black hover:bg-[#FFCC00]/90"
                         >
                             {bookingValidation.validating ? (
                                 <Loader2 className="h-5 w-5 animate-spin" />
@@ -115,7 +120,10 @@ export const BookingDataStep = ({
 
                 {/* Transporter Name */}
                 <div className="space-y-3">
-                    <Label htmlFor="transporter_name" className="text-base font-semibold">
+                    <Label
+                        htmlFor="transporter_name"
+                        className="text-base font-semibold"
+                    >
                         Nombre del Transportista *
                     </Label>
                     <Input
@@ -125,7 +133,7 @@ export const BookingDataStep = ({
                             onDataChange('transporter_name', e.target.value)
                         }
                         placeholder="Nombre completo"
-                        className="h-14 text-base px-4 border-2 focus:border-[#FFCC00] focus:ring-[#FFCC00]"
+                        className="h-14 border-2 px-4 text-base focus:border-[#FFCC00] focus:ring-[#FFCC00]"
                     />
                     {errors.transporter_name && (
                         <p className="text-sm text-destructive">
@@ -137,7 +145,10 @@ export const BookingDataStep = ({
                 {/* Truck Plate */}
                 <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                        <Label htmlFor="truck_plate" className="text-base font-semibold">
+                        <Label
+                            htmlFor="truck_plate"
+                            className="text-base font-semibold"
+                        >
                             Patente del Camión *
                         </Label>
                         {plateHistory.length > 0 && (
@@ -164,7 +175,7 @@ export const BookingDataStep = ({
                         }
                         placeholder="AA-BB-12"
                         maxLength={PLATE_INPUT_MAX_LENGTH}
-                        className="h-14 text-base px-4 border-2 focus:border-[#FFCC00] focus:ring-[#FFCC00]"
+                        className="h-14 border-2 px-4 text-base focus:border-[#FFCC00] focus:ring-[#FFCC00]"
                     />
                     {errors.truck_plate && (
                         <p className="text-sm text-destructive">
