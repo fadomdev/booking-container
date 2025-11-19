@@ -21,7 +21,17 @@ Route::get('/', function () {
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', function () {
-        return Inertia::render('dashboard');
+        $user = Auth::user();
+
+        // Get active reservations count (confirmed reservations with future or today's date)
+        $activeReservationsCount = \App\Models\Reservation::where('user_id', $user->id)
+            ->where('status', 'confirmed')
+            ->whereDate('reservation_date', '>=', now()->toDateString())
+            ->count();
+
+        return Inertia::render('dashboard', [
+            'activeReservationsCount' => $activeReservationsCount,
+        ]);
     })->name('dashboard');
 
     // Reservations for all authenticated users

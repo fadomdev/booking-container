@@ -79,14 +79,14 @@ export const BookingDataStep = ({
                                 )
                             }
                             onBlur={onValidateBooking}
-                            placeholder="INGRESE NÚMERO DE BOOKING (EJ: BK-123456)"
-                            className="h-14 flex-1 border-2 px-4 text-base focus:border-[#FFCC00] focus:ring-[#FFCC00]"
+                            placeholder="Ingrese número de booking"
+                            className="h-14 flex-1 border-2 px-4 text-base focus:border-[#ffcc00] focus:ring-[#ffcc00]"
                         />
                         <Button
                             type="button"
                             onClick={onValidateBooking}
                             disabled={bookingValidation.validating}
-                            className="h-14 bg-[#FFCC00] px-6 font-semibold text-black hover:bg-[#FFCC00]/90"
+                            className="h-14 bg-[#ffcc00] px-6 font-semibold text-black hover:bg-[#ffcc00]/90"
                         >
                             {bookingValidation.validating ? (
                                 <Loader2 className="h-5 w-5 animate-spin" />
@@ -129,11 +129,18 @@ export const BookingDataStep = ({
                     <Input
                         id="transporter_name"
                         value={data.transporter_name}
-                        onChange={(e) =>
-                            onDataChange('transporter_name', e.target.value)
-                        }
-                        placeholder="Nombre completo"
-                        className="h-14 border-2 px-4 text-base focus:border-[#FFCC00] focus:ring-[#FFCC00]"
+                        onChange={(e) => {
+                            const normalized = e.target.value
+                                .toUpperCase()
+                                .normalize('NFD')
+                                .replace(/[\u0300-\u036f]/g, '')
+                                .replace(/Ñ/g, 'N')
+                                .replace(/[^A-Z0-9 ]/g, '');
+                            onDataChange('transporter_name', normalized);
+                        }}
+                        placeholder="NOMBRE COMPLETO"
+                        readOnly
+                        className="h-14 cursor-not-allowed border-2 bg-gray-50 px-4 text-base focus:border-[#ffcc00] focus:ring-[#ffcc00]"
                     />
                     {errors.transporter_name && (
                         <p className="text-sm text-destructive">
@@ -157,7 +164,7 @@ export const BookingDataStep = ({
                                 variant="outline"
                                 size="sm"
                                 onClick={onShowPlateHistory}
-                                className="border-[#FFCC00] text-black hover:bg-[#FFCC00]/10"
+                                className="border-[#ffcc00] text-black hover:bg-[#ffcc00]/10"
                             >
                                 <History className="mr-2 h-4 w-4" />
                                 Historial
@@ -173,9 +180,9 @@ export const BookingDataStep = ({
                                 e.target.value.toUpperCase(),
                             )
                         }
-                        placeholder="AA-BB-12"
+                        placeholder="AA1234"
                         maxLength={PLATE_INPUT_MAX_LENGTH}
-                        className="h-14 border-2 px-4 text-base focus:border-[#FFCC00] focus:ring-[#FFCC00]"
+                        className="h-14 border-2 px-4 text-base focus:border-[#ffcc00] focus:ring-[#ffcc00]"
                     />
                     {errors.truck_plate && (
                         <p className="text-sm text-destructive">

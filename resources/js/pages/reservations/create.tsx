@@ -79,11 +79,21 @@ export default function CreateReservation({
         };
     }>();
 
+    // Normalize user name: uppercase, remove accents and ñ
+    const normalizeText = (text: string): string => {
+        return text
+            .toUpperCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/Ñ/g, 'N')
+            .replace(/[^A-Z0-9 ]/g, '');
+    };
+
     const { data, setData, post, processing, errors, clearErrors } = useForm({
         reservation_date: selectedDate,
         reservation_time: '',
         booking_number: '',
-        transporter_name: page.props.auth.user.name,
+        transporter_name: normalizeText(page.props.auth.user.name),
         truck_plate: '',
         slots_requested: 1,
         container_numbers: [''],
@@ -247,7 +257,7 @@ export default function CreateReservation({
 
                 {isBlocked && (
                     <Card className="border-destructive bg-destructive/5">
-                        <CardContent className="flex items-center gap-3 pt-6">
+                        <CardContent className="flex items-center gap-3">
                             <AlertCircle className="h-5 w-5 text-destructive" />
                             <div className="flex-1">
                                 <p className="font-medium text-destructive">
@@ -341,7 +351,7 @@ export default function CreateReservation({
                             variant="outline"
                             onClick={handlePreviousStep}
                             disabled={currentStep === 1 || processing}
-                            className="h-12 border-2 border-gray-300 px-6 hover:border-[#FFCC00] hover:bg-[#FFCC00]/10"
+                            className="h-12 border-2 border-gray-300 px-6 hover:border-[#ffcc00] hover:bg-[#ffcc00]/10"
                         >
                             <ChevronLeft className="mr-2 h-5 w-5" />
                             Anterior
@@ -356,7 +366,7 @@ export default function CreateReservation({
                                     isBlocked ||
                                     processing
                                 }
-                                className="h-12 bg-[#FFCC00] px-8 text-base font-semibold text-black hover:bg-[#FFCC00]/90"
+                                className="h-12 bg-[#ffcc00] px-8 text-base font-semibold text-black hover:bg-[#ffcc00]/90"
                             >
                                 Siguiente
                                 <ChevronRight className="ml-2 h-5 w-5" />
@@ -371,7 +381,7 @@ export default function CreateReservation({
                                 disabled={
                                     processing || isBlocked || isSubmitting
                                 }
-                                className="h-12 bg-[#D40511] px-8 text-base font-semibold text-white shadow-lg hover:bg-[#D40511]/90"
+                                className="h-12 bg-[#d40511] px-8 text-base font-semibold text-white shadow-lg hover:bg-[#d40511]/90"
                             >
                                 {processing || isSubmitting ? (
                                     <>

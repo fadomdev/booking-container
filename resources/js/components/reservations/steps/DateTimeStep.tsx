@@ -1,4 +1,6 @@
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import {
     Card,
     CardContent,
@@ -6,9 +8,15 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from '@/components/ui/popover';
 import { TimeSlot } from '@/types';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 import { Calendar, CheckCircle2, Clock } from 'lucide-react';
 
 interface DateTimeStepProps {
@@ -32,6 +40,10 @@ export const DateTimeStep = ({
     onTimeSelect,
     errors,
 }: DateTimeStepProps) => {
+    const selectedDate = data.reservation_date
+        ? new Date(data.reservation_date + 'T00:00:00')
+        : undefined;
+
     return (
         <Card>
             <CardHeader>
@@ -52,13 +64,50 @@ export const DateTimeStep = ({
                     >
                         Fecha de Reserva *
                     </Label>
-                    <Input
-                        id="reservation_date"
-                        type="date"
-                        value={data.reservation_date}
-                        onChange={(e) => onDateChange(e.target.value)}
-                        className="h-14 border-2 px-4 text-base focus:border-[#FFCC00] focus:ring-[#FFCC00]"
-                    />
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <Button
+                                variant="outline"
+                                className={`h-14 w-full justify-start border-2 px-4 text-left text-base font-normal transition-colors hover:border-[#ffcc00] hover:bg-[#ffcc00]/10 ${
+                                    data.reservation_date
+                                        ? 'text-foreground'
+                                        : 'text-muted-foreground'
+                                } focus:border-[#ffcc00] focus:ring-[#ffcc00]`}
+                            >
+                                <Calendar className="mr-3 h-5 w-5" />
+                                {data.reservation_date ? (
+                                    format(selectedDate!, 'PPP', { locale: es })
+                                ) : (
+                                    <span>SELECCIONE UNA FECHA</span>
+                                )}
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                            <CalendarComponent
+                                mode="single"
+                                selected={selectedDate}
+                                onSelect={(date) => {
+                                    if (date) {
+                                        const year = date.getFullYear();
+                                        const month = String(
+                                            date.getMonth() + 1,
+                                        ).padStart(2, '0');
+                                        const day = String(
+                                            date.getDate(),
+                                        ).padStart(2, '0');
+                                        onDateChange(`${year}-${month}-${day}`);
+                                    }
+                                }}
+                                disabled={(date) => {
+                                    const today = new Date();
+                                    today.setHours(0, 0, 0, 0);
+                                    return date < today;
+                                }}
+                                initialFocus
+                                locale={es}
+                            />
+                        </PopoverContent>
+                    </Popover>
                     {errors.reservation_date && (
                         <p className="text-sm text-destructive">
                             {errors.reservation_date}
@@ -96,9 +145,9 @@ export const DateTimeStep = ({
                                         disabled={!hasCapacity}
                                         className={`relative rounded-lg border-2 p-5 text-left transition-all ${
                                             isSelected
-                                                ? 'border-[#FFCC00] bg-[#FFCC00]/20 shadow-lg ring-2 ring-[#FFCC00]/50'
+                                                ? 'border-[#ffcc00] bg-[#ffcc00]/20 shadow-lg ring-2 ring-[#ffcc00]/50'
                                                 : hasCapacity
-                                                  ? 'border-gray-300 bg-white hover:border-[#FFCC00] hover:bg-[#FFCC00]/10 hover:shadow-md'
+                                                  ? 'border-gray-300 bg-white hover:border-[#ffcc00] hover:bg-[#ffcc00]/10 hover:shadow-md'
                                                   : 'cursor-not-allowed border-gray-200 bg-gray-100 opacity-50'
                                         }`}
                                     >
@@ -114,10 +163,10 @@ export const DateTimeStep = ({
                                             <Badge
                                                 className={
                                                     isSelected
-                                                        ? 'border-[#FFCC00] bg-[#FFCC00] font-semibold text-black'
+                                                        ? 'border-[#ffcc00] bg-[#ffcc00] font-semibold text-black'
                                                         : hasCapacity
                                                           ? 'border-green-300 bg-green-100 text-green-800'
-                                                          : 'border-[#D40511] bg-[#D40511]/10 text-[#D40511]'
+                                                          : 'border-[#d40511] bg-[#d40511]/10 text-[#d40511]'
                                                 }
                                                 variant="outline"
                                             >

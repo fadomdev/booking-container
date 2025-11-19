@@ -10,6 +10,6 @@ export const RESERVATION_STEPS = [
 export const MAX_SLOTS_PER_RESERVATION = 2;
 export const MAX_PLATE_HISTORY = 10;
 export const CONTAINER_INPUT_MAX_LENGTH = 20;
-export const PLATE_INPUT_MAX_LENGTH = 10;
+export const PLATE_INPUT_MAX_LENGTH = 6;
 
 export type ReservationStep = (typeof RESERVATION_STEPS)[number];
