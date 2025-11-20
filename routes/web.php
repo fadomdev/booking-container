@@ -7,6 +7,7 @@ use Laravel\Fortify\Features;
 use App\Http\Controllers\ReservationController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\ScheduleConfigController;
+use App\Http\Controllers\Admin\SpecialScheduleController;
 use App\Http\Controllers\Admin\BlockedDateController;
 use App\Http\Controllers\Admin\ReservationController as AdminReservationController;
 use App\Http\Controllers\Admin\CompanyController;
@@ -81,6 +82,17 @@ Route::middleware(['auth', 'verified', App\Http\Middleware\EnsureUserIsAdmin::cl
             Route::put('/{blockedDate}', [BlockedDateController::class, 'update'])->name('update');
             Route::delete('/{blockedDate}', [BlockedDateController::class, 'destroy'])->name('destroy');
             Route::post('/{blockedDate}/toggle-status', [BlockedDateController::class, 'toggleStatus'])->name('toggle-status');
+        });
+
+        // Special schedules management
+        Route::prefix('special-schedules')->name('special-schedules.')->group(function () {
+            Route::get('/', [SpecialScheduleController::class, 'index'])->name('index');
+            Route::get('/create', [SpecialScheduleController::class, 'create'])->name('create');
+            Route::post('/', [SpecialScheduleController::class, 'store'])->name('store');
+            Route::get('/{specialSchedule}/edit', [SpecialScheduleController::class, 'edit'])->name('edit');
+            Route::put('/{specialSchedule}', [SpecialScheduleController::class, 'update'])->name('update');
+            Route::delete('/{specialSchedule}', [SpecialScheduleController::class, 'destroy'])->name('destroy');
+            Route::post('/{specialSchedule}/toggle-status', [SpecialScheduleController::class, 'toggleStatus'])->name('toggle-status');
         });
 
         // Reservation management
