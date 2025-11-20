@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ScheduleConfig;
+use App\Models\SpecialSchedule;
 use App\Models\BlockedDate;
 use App\Models\Booking;
 use App\Models\Reservation;
@@ -60,10 +61,13 @@ class ReservationController extends Controller
      */
     private function getAvailableTimeSlots(string $date): array
     {
-        $configs = ScheduleConfig::where('is_active', true)->get();
+        $user = request()->user();
         $allSlots = [];
         $now = now();
         $isToday = $date === $now->format('Y-m-d');
+
+        // STEP 1: Generate regular schedule slots (everyone sees these)
+        $configs = ScheduleConfig::where('is_active', true)->get();
 
         foreach ($configs as $config) {
             $slots = $config->generateSlotsForDate($date);
@@ -72,7 +76,7 @@ class ReservationController extends Controller
                 if ($isToday) {
                     $slotDateTime = Carbon::createFromFormat('Y-m-d H:i', $date . ' ' . $slot['time']);
                     if ($slotDateTime->isPast()) {
-                        continue; // Skip this slot, it's in the past
+                        continue;
                     }
                 }
 
@@ -82,15 +86,70 @@ class ReservationController extends Controller
                     $slot['total_capacity']
                 );
 
-                // Only include slots with available capacity
                 if ($availableCapacity > 0) {
                     $allSlots[] = [
                         'time' => $slot['time'],
                         'total_capacity' => $slot['total_capacity'],
                         'available_capacity' => $availableCapacity,
                         'config_id' => $slot['config_id'],
-                        'is_past' => false, // Already filtered out past slots
+                        'is_special' => false,
+                        'is_past' => false,
                     ];
+                }
+            }
+        }
+
+        // STEP 2: Add special schedule extended hours
+        $specialSchedule = SpecialSchedule::getForDate($date);
+
+        if ($specialSchedule) {
+            // Check if user can see this special schedule
+            $canSeeSpecialSchedule = !$specialSchedule->restricted_access ||
+                $specialSchedule->isUserAuthorized($user);
+
+            if ($canSeeSpecialSchedule) {
+                // Get all special slots
+                $specialSlots = $specialSchedule->generateSlots();
+
+                // Get the last regular slot time (not end_time, but the last actual slot)
+                $lastRegularSlotTime = null;
+                if (!empty($allSlots)) {
+                    // Get the maximum time from already generated normal slots
+                    $lastRegularSlotTime = max(array_column($allSlots, 'time'));
+                }
+
+                // Only add slots that extend beyond the last regular slot
+                foreach ($specialSlots as $slot) {
+                    // If no regular slots exist, add all special slots
+                    // Otherwise, only add slots that are after the last regular slot
+                    $shouldAdd = $lastRegularSlotTime === null || $slot['time'] > $lastRegularSlotTime;
+
+                    if ($shouldAdd) {
+                        // Skip past time slots if it's today
+                        if ($isToday) {
+                            $slotDateTime = Carbon::createFromFormat('Y-m-d H:i', $date . ' ' . $slot['time']);
+                            if ($slotDateTime->isPast()) {
+                                continue;
+                            }
+                        }
+
+                        $availableCapacity = Reservation::getAvailableCapacity(
+                            $date,
+                            $slot['time'],
+                            $slot['total_capacity']
+                        );
+
+                        if ($availableCapacity > 0) {
+                            $allSlots[] = [
+                                'time' => $slot['time'],
+                                'total_capacity' => $slot['total_capacity'],
+                                'available_capacity' => $availableCapacity,
+                                'special_schedule_id' => $slot['special_schedule_id'],
+                                'is_special' => true,
+                                'is_past' => false,
+                            ];
+                        }
+                    }
                 }
             }
         }

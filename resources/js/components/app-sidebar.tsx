@@ -17,6 +17,7 @@ import {
     Calendar,
     CalendarDays,
     CalendarOff,
+    CalendarPlus,
     ClipboardList,
     LayoutGrid,
     Users,
@@ -59,6 +60,11 @@ export function AppSidebar() {
                     title: 'Configuración de Horarios',
                     href: '/admin/schedule-config',
                     icon: CalendarDays,
+                },
+                {
+                    title: 'Horarios Especiales',
+                    href: '/admin/special-schedules',
+                    icon: CalendarPlus,
                 },
                 {
                     title: 'Fechas Bloqueadas',
