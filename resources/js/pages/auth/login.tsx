@@ -7,7 +7,6 @@ import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import AuthLayout from '@/layouts/auth-layout';
 import { formatRut } from '@/lib/rut';
-import { register } from '@/routes';
 import { store } from '@/routes/login';
 import { request } from '@/routes/password';
 import { Form, Head } from '@inertiajs/react';
@@ -16,14 +15,9 @@ import { useState } from 'react';
 interface LoginProps {
     status?: string;
     canResetPassword: boolean;
-    canRegister: boolean;
 }
 
-export default function Login({
-    status,
-    canResetPassword,
-    canRegister,
-}: LoginProps) {
+export default function Login({ status, canResetPassword }: LoginProps) {
     const [rutValue, setRutValue] = useState('');
 
     const handleRutChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -48,7 +42,9 @@ export default function Login({
                     <>
                         <div className="grid gap-6">
                             <div className="grid gap-2">
-                                <Label htmlFor="rut">RUT</Label>
+                                <Label htmlFor="rut" className="text-[#003153]">
+                                    RUT
+                                </Label>
                                 <Input
                                     id="rut"
                                     type="text"
@@ -61,17 +57,23 @@ export default function Login({
                                     autoComplete="username"
                                     placeholder="12345678-9"
                                     maxLength={10}
+                                    className="h-14 border-gray-300 focus:border-[#ffcc00] focus:ring-[#ffcc00]"
                                 />
                                 <InputError message={errors.rut} />
                             </div>
 
                             <div className="grid gap-2">
                                 <div className="flex items-center">
-                                    <Label htmlFor="password">Contraseña</Label>
+                                    <Label
+                                        htmlFor="password"
+                                        className="text-[#003153]"
+                                    >
+                                        Contraseña
+                                    </Label>
                                     {canResetPassword && (
                                         <TextLink
                                             href={request()}
-                                            className="ml-auto text-sm"
+                                            className="ml-auto text-sm text-[#003153] hover:text-[#003153]/80"
                                             tabIndex={5}
                                         >
                                             ¿Olvidaste tu contraseña?
@@ -86,6 +88,7 @@ export default function Login({
                                     tabIndex={2}
                                     autoComplete="current-password"
                                     placeholder="Contraseña"
+                                    className="h-14 border-gray-300 focus:border-[#ffcc00] focus:ring-[#ffcc00]"
                                 />
                                 <InputError message={errors.password} />
                             </div>
@@ -96,12 +99,17 @@ export default function Login({
                                     name="remember"
                                     tabIndex={3}
                                 />
-                                <Label htmlFor="remember">Recordarme</Label>
+                                <Label
+                                    htmlFor="remember"
+                                    className="text-[#003153]"
+                                >
+                                    Recordarme
+                                </Label>
                             </div>
 
                             <Button
                                 type="submit"
-                                className="mt-4 w-full"
+                                className="mt-4 w-full bg-[#ffcc00] font-semibold text-[#003153] hover:bg-[#ffcc00]/90"
                                 tabIndex={4}
                                 disabled={processing}
                                 data-test="login-button"
@@ -110,15 +118,6 @@ export default function Login({
                                 Iniciar Sesión
                             </Button>
                         </div>
-
-                        {canRegister && (
-                            <div className="text-center text-sm text-muted-foreground">
-                                ¿No tienes una cuenta?{' '}
-                                <TextLink href={register()} tabIndex={5}>
-                                    Registrarse
-                                </TextLink>
-                            </div>
-                        )}
                     </>
                 )}
             </Form>

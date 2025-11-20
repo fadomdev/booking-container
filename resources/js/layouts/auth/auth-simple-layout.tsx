@@ -34,7 +34,7 @@ export default function AuthSimpleLayout({
             {/* Content */}
             <div className="relative z-10 flex flex-1 flex-col items-center justify-center gap-6 p-6 md:p-10">
                 <div className="w-full max-w-md">
-                    <div className="rounded-2xl border border-white/10 bg-white/95 p-8 shadow-2xl backdrop-blur-sm dark:bg-gray-900/95">
+                    <div className="rounded-2xl border border-white/10 bg-white p-8 shadow-2xl backdrop-blur-sm dark:bg-gray-900/95">
                         <div className="flex flex-col gap-8">
                             <div className="flex flex-col items-center gap-4">
                                 <Link
@@ -46,7 +46,7 @@ export default function AuthSimpleLayout({
                                         <AppLogoIcon className="size-10 fill-current text-primary" />
                                     </div>
                                     */}
-                                    <div className="mb-1 flex w-[360px] items-center justify-center shadow shadow-gray-500/20">
+                                    <div className="mb-2 flex w-[360px] items-center justify-center">
                                         <img
                                             src="/images/hillebrand-gori-logo.jpg"
                                             alt="Hillebrand Gori Logo"
