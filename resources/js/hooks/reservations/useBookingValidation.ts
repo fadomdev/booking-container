@@ -4,6 +4,7 @@ interface BookingValidationState {
     valid: boolean | null;
     message: string;
     validating: boolean;
+    fileInfo?: string | null;
 }
 
 export const useBookingValidation = () => {
@@ -38,11 +39,32 @@ export const useBookingValidation = () => {
                 },
             );
             const result = response.data;
+            console.log('result.data:', result.data);
+            console.log(
+                'result.data?.file_info:',
+                result.data?.data?.file_info,
+            );
+
+            // Format file_info if it exists in the response
+            let fileInfoFormatted = null;
+            if (result.data?.data?.file_info) {
+                const { file, tipo_flexitank } = result.data.data.file_info;
+
+                // format with line breaks
+                if (file || tipo_flexitank) {
+                    const parts = [];
+                    if (file) parts.push(`File: ${file}`);
+                    if (tipo_flexitank)
+                        parts.push(`Tipo Flexitank: ${tipo_flexitank}`);
+                    fileInfoFormatted = parts.join('\n');
+                }
+            }
 
             setValidation({
                 valid: result.valid,
                 message: result.message,
                 validating: false,
+                fileInfo: fileInfoFormatted,
             });
 
             return result.valid;
@@ -61,6 +83,7 @@ export const useBookingValidation = () => {
             valid: null,
             message: '',
             validating: false,
+            fileInfo: null,
         });
     };
 

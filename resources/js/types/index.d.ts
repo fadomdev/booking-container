@@ -108,6 +108,7 @@ export interface Reservation {
     slots_reserved: number;
     container_numbers?: string[];
     api_notes?: string;
+    file_info?: string;
     status: 'active' | 'cancelled' | 'completed';
     cancelled_at?: string;
     cancellation_comment?: string;

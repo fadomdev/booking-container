@@ -361,6 +361,13 @@ class ReservationController extends Controller
      */
     public function store(Request $request)
     {
+        // Debug: Log what we're receiving
+        Log::info('Reservation store request', [
+            'all_data' => $request->all(),
+            'has_file_info' => $request->has('file_info'),
+            'file_info_value' => $request->input('file_info'),
+        ]);
+
         $validated = $request->validate([
             'reservation_date' => ['required', 'date', 'after_or_equal:today'],
             'reservation_time' => ['required', 'date_format:H:i'],
@@ -371,6 +378,7 @@ class ReservationController extends Controller
             'container_numbers' => ['required', 'array'],
             'container_numbers.*' => ['required', 'string', 'max:20'],
             'api_notes' => ['nullable', 'string'],
+            'file_info' => ['nullable', 'string'],
         ]);
 
         // Validate container numbers count matches slots requested
@@ -484,6 +492,7 @@ class ReservationController extends Controller
                 'slots_reserved' => $slotsRequested,
                 'container_numbers' => $cleanContainerNumbers,
                 'api_notes' => $validated['api_notes'] ?? null,
+                'file_info' => $validated['file_info'] ?? null,
                 'status' => 'active',
             ]);
 

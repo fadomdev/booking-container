@@ -24,6 +24,7 @@ class Reservation extends Model
         'slots_reserved',
         'container_numbers',
         'api_notes',
+        'file_info',
         'status',
         'cancelled_at',
         'cancellation_comment',

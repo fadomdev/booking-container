@@ -13,7 +13,7 @@ import { usePlateHistory } from '@/hooks/reservations/usePlateHistory';
 import AppLayout from '@/layouts/app-layout';
 import { RESERVATION_STEPS } from '@/lib/reservations/constants';
 import { TimeSlot } from '@/types';
-import { Head, useForm, usePage } from '@inertiajs/react';
+import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { AlertCircle, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { FormEvent, useEffect, useState } from 'react';
 
@@ -89,7 +89,7 @@ export default function CreateReservation({
             .replace(/[^A-Z0-9 ]/g, '');
     };
 
-    const { data, setData, post, processing, errors, clearErrors } = useForm({
+    const { data, setData, processing, errors, clearErrors } = useForm({
         reservation_date: selectedDate,
         reservation_time: '',
         booking_number: '',
@@ -98,6 +98,7 @@ export default function CreateReservation({
         slots_requested: 1,
         container_numbers: [''],
         api_notes: '',
+        file_info: '',
     });
 
     // Handle date change
@@ -134,6 +135,8 @@ export default function CreateReservation({
 
     const handleNextStep = async () => {
         clearErrors();
+        console.log('📊 Booking Validation:', bookingValidation);
+        console.log('📦 Container Validation:', containerValidation);
 
         if (currentStep === 2 && !bookingValidation.valid) {
             const isValid = await validateBooking(data.booking_number);
@@ -175,6 +178,10 @@ export default function CreateReservation({
         setData('container_numbers', newContainers);
     };
 
+    useEffect(() => {
+        console.log('Component mounted: ', bookingValidation);
+    }, [bookingValidation]);
+
     // Submit form
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
@@ -196,14 +203,28 @@ export default function CreateReservation({
             truck_plate: data.truck_plate,
         });
 
-        // Update api_notes and submit
-        setData('api_notes', result.notes);
-        setTimeout(() => {
-            post('/reservations', {
-                preserveScroll: true,
-                preserveState: true,
-            });
-        }, 0);
+        // Create complete data object with api_notes and file_info
+        const submissionData = {
+            ...data,
+            api_notes: result.notes,
+            file_info: bookingValidation.fileInfo || '',
+        };
+
+        console.log('📝 Datos completos a enviar:', submissionData);
+        console.log('  - api_notes:', submissionData.api_notes);
+        console.log('  - file_info:', submissionData.file_info);
+
+        // Submit directly using Inertia router
+        router.post('/reservations', submissionData, {
+            preserveScroll: true,
+            preserveState: true,
+            onSuccess: () => {
+                setIsSubmitting(false);
+            },
+            onError: () => {
+                setIsSubmitting(false);
+            },
+        });
     };
 
     // Show success modal on flash success

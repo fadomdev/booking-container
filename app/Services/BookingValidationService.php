@@ -32,7 +32,7 @@ class BookingValidationService
             }
 
             $requestData = [
-                'bookingCode' => $bookingNumber,
+                'booking_number' => $bookingNumber,
                 'action' => 'valida_booking',
             ];
 
@@ -89,30 +89,12 @@ class BookingValidationService
                         ];
                     }
 
-                    // Exists is true, now check status
-                    $status = $data['status'] ?? null;
-                    if ($status === 'active' || $status === 'confirmed') {
-                        return [
-                            'valid' => true,
-                            'message' => 'Booking válido',
-                            'data' => $data
-                        ];
-                    } elseif ($status) {
-                        return [
-                            'valid' => false,
-                            'message' => "Booking no válido - Estado: {$status}",
-                            'data' => $data
-                        ];
-                    }
-
-                    // Exists is true but no status, check success flag
-                    if (isset($data['success']) && $data['success']) {
-                        return [
-                            'valid' => true,
-                            'message' => 'Booking válido',
-                            'data' => $data
-                        ];
-                    }
+                    // Exists field validated - booking number is valid
+                    return [
+                        'valid' => true,
+                        'message' => 'Booking válido',
+                        'data' => $data
+                    ];
                 }
 
                 // Fallback: check success and status without exists field

@@ -12,6 +12,11 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from '@/components/ui/popover';
+import {
     Select,
     SelectContent,
     SelectItem,
@@ -30,7 +35,7 @@ import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
 import { PaginatedData, Reservation } from '@/types';
 import { Head, Link, router, useForm } from '@inertiajs/react';
-import { Filter, XCircle } from 'lucide-react';
+import { FileDown, Filter, Info, XCircle } from 'lucide-react';
 import { useState } from 'react';
 
 interface Props {
@@ -52,6 +57,7 @@ export default function AdminReservationsIndex({
     const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
     const [selectedReservation, setSelectedReservation] =
         useState<Reservation | null>(null);
+    const [openFileInfoId, setOpenFileInfoId] = useState<number | null>(null);
 
     const { data, setData, post, processing, reset } = useForm({
         cancellation_comment: '',
@@ -72,6 +78,16 @@ export default function AdminReservationsIndex({
         setFilterStatus('all');
         setPerPage('20');
         router.get('/admin/reservations');
+    };
+
+    const exportToExcel = () => {
+        const params = new URLSearchParams();
+        if (filterDate) params.set('date', filterDate);
+        if (filterStatus && filterStatus !== 'all')
+            params.set('status', filterStatus);
+        params.set('export', 'excel');
+
+        window.location.href = `/admin/reservations?${params.toString()}`;
     };
 
     const handlePerPageChange = (value: string) => {
@@ -177,6 +193,14 @@ export default function AdminReservationsIndex({
                                 >
                                     Limpiar
                                 </Button>
+                                <Button
+                                    variant="default"
+                                    onClick={exportToExcel}
+                                    className="bg-green-600 hover:bg-green-700"
+                                >
+                                    <FileDown className="mr-2 h-4 w-4" />
+                                    Excel
+                                </Button>
                             </div>
                         </div>
                     </CardContent>
@@ -218,10 +242,10 @@ export default function AdminReservationsIndex({
                                     <TableHead>Booking</TableHead>
                                     <TableHead>Cupos</TableHead>
                                     <TableHead>Contenedores</TableHead>
-                                    <TableHead>Notas API</TableHead>
                                     <TableHead>Usuario</TableHead>
                                     <TableHead>Estado</TableHead>
                                     <TableHead>Creada</TableHead>
+                                    <TableHead>File Info</TableHead>
                                     <TableHead>Acciones</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -288,176 +312,6 @@ export default function AdminReservationsIndex({
                                                 )}
                                             </TableCell>
                                             <TableCell>
-                                                {reservation.api_notes ? (
-                                                    <div className="max-w-md">
-                                                        <details className="cursor-pointer">
-                                                            <summary className="text-xs font-medium text-blue-600 hover:text-blue-800">
-                                                                Ver notas API
-                                                            </summary>
-                                                            <div className="mt-2 space-y-2">
-                                                                {(() => {
-                                                                    try {
-                                                                        const notes =
-                                                                            JSON.parse(
-                                                                                reservation.api_notes,
-                                                                            );
-                                                                        return (
-                                                                            <div className="rounded-md border bg-muted/50 p-3 text-xs">
-                                                                                <div className="mb-2 flex items-center justify-between border-b pb-2">
-                                                                                    <span className="font-semibold">
-                                                                                        Resumen
-                                                                                    </span>
-                                                                                    <span className="text-muted-foreground">
-                                                                                        {
-                                                                                            notes.timestamp
-                                                                                        }
-                                                                                    </span>
-                                                                                </div>
-                                                                                <div className="mb-2 grid grid-cols-3 gap-2 text-center">
-                                                                                    <div className="rounded bg-green-100 p-2">
-                                                                                        <div className="text-lg font-bold text-green-700">
-                                                                                            {
-                                                                                                notes.successful
-                                                                                            }
-                                                                                        </div>
-                                                                                        <div className="text-[10px] text-green-600">
-                                                                                            Exitosos
-                                                                                        </div>
-                                                                                    </div>
-                                                                                    <div className="rounded bg-red-100 p-2">
-                                                                                        <div className="text-lg font-bold text-red-700">
-                                                                                            {
-                                                                                                notes.failed
-                                                                                            }
-                                                                                        </div>
-                                                                                        <div className="text-[10px] text-red-600">
-                                                                                            Fallidos
-                                                                                        </div>
-                                                                                    </div>
-                                                                                    <div className="rounded bg-blue-100 p-2">
-                                                                                        <div className="text-lg font-bold text-blue-700">
-                                                                                            {
-                                                                                                notes.total_containers
-                                                                                            }
-                                                                                        </div>
-                                                                                        <div className="text-[10px] text-blue-600">
-                                                                                            Total
-                                                                                        </div>
-                                                                                    </div>
-                                                                                </div>
-
-                                                                                {notes.errors &&
-                                                                                    notes
-                                                                                        .errors
-                                                                                        .length >
-                                                                                        0 && (
-                                                                                        <div className="mt-2 space-y-1 border-t pt-2">
-                                                                                            <div className="mb-1 text-[10px] font-semibold text-red-600 uppercase">
-                                                                                                Errores:
-                                                                                            </div>
-                                                                                            {notes.errors.map(
-                                                                                                (
-                                                                                                    error: {
-                                                                                                        container: string;
-                                                                                                        message: string;
-                                                                                                        type: string;
-                                                                                                    },
-                                                                                                    idx: number,
-                                                                                                ) => (
-                                                                                                    <div
-                                                                                                        key={
-                                                                                                            idx
-                                                                                                        }
-                                                                                                        className="rounded bg-red-50 p-2"
-                                                                                                    >
-                                                                                                        <div className="flex items-start gap-2">
-                                                                                                            <span className="font-mono font-semibold text-red-700">
-                                                                                                                {
-                                                                                                                    error.container
-                                                                                                                }
-                                                                                                            </span>
-                                                                                                            <span className="rounded bg-red-200 px-1.5 py-0.5 text-[10px] font-medium text-red-800">
-                                                                                                                {
-                                                                                                                    error.type
-                                                                                                                }
-                                                                                                            </span>
-                                                                                                        </div>
-                                                                                                        <div className="mt-1 text-[11px] text-red-600">
-                                                                                                            {
-                                                                                                                error.message
-                                                                                                            }
-                                                                                                        </div>
-                                                                                                    </div>
-                                                                                                ),
-                                                                                            )}
-                                                                                        </div>
-                                                                                    )}
-
-                                                                                {notes.results &&
-                                                                                    notes
-                                                                                        .results
-                                                                                        .length >
-                                                                                        0 && (
-                                                                                        <div className="mt-2 space-y-1 border-t pt-2">
-                                                                                            <div className="mb-1 text-[10px] font-semibold text-green-600 uppercase">
-                                                                                                Exitosos:
-                                                                                            </div>
-                                                                                            {notes.results.map(
-                                                                                                (
-                                                                                                    result: {
-                                                                                                        container: string;
-                                                                                                    },
-                                                                                                    idx: number,
-                                                                                                ) => (
-                                                                                                    <div
-                                                                                                        key={
-                                                                                                            idx
-                                                                                                        }
-                                                                                                        className="rounded bg-green-50 p-1.5"
-                                                                                                    >
-                                                                                                        <span className="font-mono text-[11px] font-medium text-green-700">
-                                                                                                            ✓{' '}
-                                                                                                            {
-                                                                                                                result.container
-                                                                                                            }
-                                                                                                        </span>
-                                                                                                    </div>
-                                                                                                ),
-                                                                                            )}
-                                                                                        </div>
-                                                                                    )}
-
-                                                                                <div className="mt-2 border-t pt-2 text-[11px] text-muted-foreground">
-                                                                                    <strong>
-                                                                                        API:
-                                                                                    </strong>{' '}
-                                                                                    {
-                                                                                        notes.api_url
-                                                                                    }
-                                                                                </div>
-                                                                            </div>
-                                                                        );
-                                                                    } catch {
-                                                                        // Si no es JSON válido, mostrar como texto plano
-                                                                        return (
-                                                                            <div className="rounded-md bg-muted p-2 text-xs whitespace-pre-wrap">
-                                                                                {
-                                                                                    reservation.api_notes
-                                                                                }
-                                                                            </div>
-                                                                        );
-                                                                    }
-                                                                })()}
-                                                            </div>
-                                                        </details>
-                                                    </div>
-                                                ) : (
-                                                    <span className="text-xs text-muted-foreground">
-                                                        Sin notas
-                                                    </span>
-                                                )}
-                                            </TableCell>
-                                            <TableCell>
                                                 {reservation.user?.name}
                                             </TableCell>
                                             <TableCell>
@@ -492,6 +346,71 @@ export default function AdminReservationsIndex({
                                                         hour: '2-digit',
                                                         minute: '2-digit',
                                                     })}
+                                            </TableCell>
+                                            <TableCell>
+                                                {reservation.file_info ? (
+                                                    <Popover
+                                                        open={
+                                                            openFileInfoId ===
+                                                            reservation.id
+                                                        }
+                                                        onOpenChange={(open) =>
+                                                            setOpenFileInfoId(
+                                                                open
+                                                                    ? reservation.id
+                                                                    : null,
+                                                            )
+                                                        }
+                                                    >
+                                                        <PopoverTrigger asChild>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-8 w-8"
+                                                                title="Ver File Info"
+                                                            >
+                                                                <Info className="h-4 w-4 text-blue-600" />
+                                                            </Button>
+                                                        </PopoverTrigger>
+                                                        <PopoverContent
+                                                            className="w-80"
+                                                            align="end"
+                                                        >
+                                                            <div className="space-y-2">
+                                                                <h4 className="text-sm font-semibold">
+                                                                    File Info
+                                                                </h4>
+                                                                <div className="rounded-md border bg-blue-50 p-3 text-sm text-blue-900">
+                                                                    {reservation.file_info
+                                                                        .split(
+                                                                            ' - ',
+                                                                        )
+                                                                        .map(
+                                                                            (
+                                                                                part,
+                                                                                idx,
+                                                                            ) => (
+                                                                                <div
+                                                                                    key={
+                                                                                        idx
+                                                                                    }
+                                                                                    className="leading-relaxed"
+                                                                                >
+                                                                                    {
+                                                                                        part
+                                                                                    }
+                                                                                </div>
+                                                                            ),
+                                                                        )}
+                                                                </div>
+                                                            </div>
+                                                        </PopoverContent>
+                                                    </Popover>
+                                                ) : (
+                                                    <span className="text-xs text-muted-foreground">
+                                                        -
+                                                    </span>
+                                                )}
                                             </TableCell>
                                             <TableCell>
                                                 {reservation.status ===
