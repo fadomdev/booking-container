@@ -258,9 +258,30 @@ export default function CreateReservation({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [data.reservation_date, data.reservation_time]);
 
+    // Get selected slot
     const selectedSlot = timeSlots.find(
         (slot) => slot.time === data.reservation_time,
     );
+
+    // Adjust slots if they exceed available capacity when slot changes
+    useEffect(() => {
+        if (
+            selectedSlot &&
+            data.slots_requested > selectedSlot.available_capacity
+        ) {
+            // Reduce slots to available capacity
+            const newSlots = Math.min(
+                data.slots_requested,
+                selectedSlot.available_capacity,
+            );
+            setData((prev) => ({
+                ...prev,
+                slots_requested: newSlots,
+                container_numbers: prev.container_numbers.slice(0, newSlots),
+            }));
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedSlot?.available_capacity]);
 
     return (
         <AppLayout>

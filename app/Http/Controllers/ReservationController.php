@@ -374,7 +374,7 @@ class ReservationController extends Controller
             'booking_number' => ['required', 'string', 'max:255'],
             'transporter_name' => ['required', 'string', 'max:255'],
             'truck_plate' => ['required', 'string', 'max:10'],
-            'slots_requested' => ['required', 'integer', 'min:1', 'max:2'],
+            'slots_requested' => ['required', 'integer', 'min:1'],
             'container_numbers' => ['required', 'array'],
             'container_numbers.*' => ['required', 'string', 'max:20'],
             'api_notes' => ['nullable', 'string'],

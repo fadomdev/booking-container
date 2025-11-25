@@ -18,10 +18,7 @@ import {
     getValidationErrorMessage,
     validateContainerNumber,
 } from '@/lib/container-validator';
-import {
-    CONTAINER_INPUT_MAX_LENGTH,
-    MAX_SLOTS_PER_RESERVATION,
-} from '@/lib/reservations/constants';
+import { CONTAINER_INPUT_MAX_LENGTH } from '@/lib/reservations/constants';
 import { CheckCircle2, Package } from 'lucide-react';
 
 interface ContainersStepProps {
@@ -77,10 +74,7 @@ export const ContainersStep = ({
                             {selectedSlot &&
                                 Array.from(
                                     {
-                                        length: Math.min(
-                                            selectedSlot.available_capacity,
-                                            MAX_SLOTS_PER_RESERVATION,
-                                        ),
+                                        length: selectedSlot.available_capacity,
                                     },
                                     (_, i) => i + 1,
                                 ).map((num) => (
