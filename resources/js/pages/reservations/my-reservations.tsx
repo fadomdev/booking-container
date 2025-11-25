@@ -212,10 +212,7 @@ export default function MyReservations({ reservations, filters = {} }: Props) {
                                                 {reservation.truck_plate}
                                             </TableCell>
                                             <TableCell>
-                                                {
-                                                    reservation.booking
-                                                        ?.booking_number
-                                                }
+                                                {reservation.booking_number}
                                             </TableCell>
                                             <TableCell>
                                                 {reservation.slots_reserved}
@@ -364,10 +361,7 @@ export default function MyReservations({ reservations, filters = {} }: Props) {
                                 </p>
                                 <p>
                                     <strong>Booking:</strong>{' '}
-                                    {
-                                        selectedReservation.booking
-                                            ?.booking_number
-                                    }
+                                    {selectedReservation.booking_number}
                                 </p>
                             </div>
                         )}

@@ -147,8 +147,8 @@ export const DateTimeStep = ({
                                             isSelected
                                                 ? 'border-[#ffcc00] bg-[#ffcc00]/20 shadow-lg ring-2 ring-[#ffcc00]/50'
                                                 : hasCapacity
-                                                  ? 'border-gray-300 bg-white hover:border-[#ffcc00] hover:bg-[#ffcc00]/10 hover:shadow-md'
-                                                  : 'cursor-not-allowed border-gray-200 bg-gray-100 opacity-50'
+                                                  ? 'border-border bg-card hover:border-[#ffcc00] hover:bg-[#ffcc00]/10 hover:shadow-md'
+                                                  : 'cursor-not-allowed border-border bg-muted opacity-50'
                                         }`}
                                     >
                                         <div className="flex items-center justify-between">
@@ -165,7 +165,7 @@ export const DateTimeStep = ({
                                                     isSelected
                                                         ? 'border-[#ffcc00] bg-[#ffcc00] font-semibold text-black'
                                                         : hasCapacity
-                                                          ? 'border-green-300 bg-green-100 text-green-800'
+                                                          ? 'border-green-500 bg-green-500/20 text-green-700 dark:text-green-400'
                                                           : 'border-[#d40511] bg-[#d40511]/10 text-[#d40511]'
                                                 }
                                                 variant="outline"

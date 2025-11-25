@@ -18,7 +18,7 @@ class Reservation extends Model
         'user_id',
         'reservation_date',
         'reservation_time',
-        'booking_id',
+        'booking_number',
         'transportista_name',
         'truck_plate',
         'slots_reserved',
@@ -51,14 +51,6 @@ class Reservation extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
-    }
-
-    /**
-     * Get the booking associated with this reservation.
-     */
-    public function booking()
-    {
-        return $this->belongsTo(Booking::class);
     }
 
     /**

@@ -42,8 +42,8 @@ export const ConfirmationStep = ({
             <CardContent className="space-y-6">
                 <div className="space-y-4">
                     {/* Date and Time */}
-                    <div className="rounded-lg border bg-blue-50 p-4">
-                        <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-blue-900">
+                    <div className="rounded-lg border bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-950/20">
+                        <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-blue-900 dark:text-blue-300">
                             <Calendar className="h-4 w-4" />
                             Fecha y Horario
                         </h3>
@@ -76,8 +76,8 @@ export const ConfirmationStep = ({
                     </div>
 
                     {/* Booking Details */}
-                    <div className="rounded-lg border p-4">
-                        <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold">
+                    <div className="rounded-lg border bg-card p-4">
+                        <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground">
                             <Package className="h-4 w-4" />
                             Detalles de la Reserva
                         </h3>
@@ -121,8 +121,8 @@ export const ConfirmationStep = ({
                     </div>
 
                     {/* Containers */}
-                    <div className="rounded-lg border bg-green-50 p-4">
-                        <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-green-900">
+                    <div className="rounded-lg border bg-green-50 p-4 dark:border-green-800 dark:bg-green-950/20">
+                        <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-green-900 dark:text-green-300">
                             <CheckCircle2 className="h-4 w-4" />
                             Contenedores
                         </h3>
@@ -130,7 +130,7 @@ export const ConfirmationStep = ({
                             {data.container_numbers.map((container, idx) => (
                                 <div
                                     key={idx}
-                                    className="flex items-center gap-2 rounded border border-green-200 bg-white px-3 py-2"
+                                    className="flex items-center gap-2 rounded border border-green-200 bg-card px-3 py-2 dark:border-green-800"
                                 >
                                     <Badge
                                         className="bg-green-600 text-white"

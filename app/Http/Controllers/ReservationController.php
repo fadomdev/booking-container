@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\ScheduleConfig;
 use App\Models\SpecialSchedule;
 use App\Models\BlockedDate;
-use App\Models\Booking;
 use App\Models\Reservation;
 use App\Mail\ReservationCancelled;
 use App\Services\BookingValidationService;
@@ -416,29 +415,7 @@ class ReservationController extends Controller
                     ->withInput();
             }
 
-            // Find or create booking
-            $booking = Booking::firstOrCreate(
-                ['booking_number' => $validated['booking_number']],
-                ['is_active' => true]
-            );
-
-            if (!$booking->is_active) {
-                return redirect($redirectRoute)
-                    ->withErrors(['booking_number' => 'Este número de booking no está activo.'])
-                    ->withInput();
-            }
-
-            // Check if booking exists and validate slot limit
-            $slotsRequested = $validated['slots_requested'];
-            $bookingWasJustCreated = $booking->wasRecentlyCreated;
-
-            if ($slotsRequested > 1 && $bookingWasJustCreated) {
-                return redirect($redirectRoute)
-                    ->withErrors(['slots_requested' => 'Solo puedes reservar 2 cupos si el booking ya existe.'])
-                    ->withInput();
-            }
-
-            // Get configuration and check capacity
+            // Get configuration and check capacity first
             $configs = ScheduleConfig::where('is_active', true)->get();
             $configCapacity = 0;
 
@@ -455,6 +432,16 @@ class ReservationController extends Controller
             if ($configCapacity === 0) {
                 return redirect($redirectRoute)
                     ->withErrors(['reservation_time' => 'Este horario no está disponible.'])
+                    ->withInput();
+            }
+
+            // Validate slot limit based on schedule capacity
+            $slotsRequested = $validated['slots_requested'];
+
+            // If slots requested exceeds the capacity of the selected time slot
+            if ($slotsRequested > $configCapacity) {
+                return redirect($redirectRoute)
+                    ->withErrors(['slots_requested' => 'No puedes reservar más de ' . $configCapacity . ' cupos para este horario.'])
                     ->withInput();
             }
 
@@ -486,7 +473,7 @@ class ReservationController extends Controller
                 'user_id' => $request->user()->id,
                 'reservation_date' => $validated['reservation_date'],
                 'reservation_time' => $reservationTime,
-                'booking_id' => $booking->id,
+                'booking_number' => $validated['booking_number'],
                 'transportista_name' => $validated['transporter_name'],
                 'truck_plate' => strtoupper($validated['truck_plate']),
                 'slots_reserved' => $slotsRequested,
@@ -507,7 +494,7 @@ class ReservationController extends Controller
                     'id' => $reservation->id,
                     'reservation_date' => $reservation->reservation_date->format('Y-m-d'),
                     'reservation_time' => $reservation->reservation_time,
-                    'booking_number' => $booking->booking_number,
+                    'booking_number' => $reservation->booking_number,
                     'transporter_name' => $reservation->transportista_name,
                     'truck_plate' => $reservation->truck_plate,
                     'slots_reserved' => $reservation->slots_reserved,
@@ -524,7 +511,7 @@ class ReservationController extends Controller
      */
     public function myReservations(Request $request)
     {
-        $query = Reservation::with(['booking'])
+        $query = Reservation::query()
             ->where('user_id', $request->user()->id);
 
         // Filter by status
@@ -574,7 +561,7 @@ class ReservationController extends Controller
         );
 
         // Load relationships for email
-        $reservation->load(['user', 'booking', 'cancelledBy']);
+        $reservation->load(['user', 'cancelledBy']);
 
         // Determine if this is an admin cancellation
         $isAdminCancellation = $user->isAdmin() && $reservation->user_id !== $user->id;

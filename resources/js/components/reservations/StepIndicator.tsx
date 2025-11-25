@@ -21,7 +21,7 @@ export const StepIndicator = ({ currentStep }: StepIndicatorProps) => {
                                         ? 'border-green-500 bg-green-500 text-white'
                                         : stepConfig.id === currentStep
                                           ? 'border-primary bg-primary text-white'
-                                          : 'border-gray-300 bg-white text-gray-400'
+                                          : 'border-gray-300 bg-background text-muted-foreground dark:border-gray-600'
                                 }`}
                             >
                                 {stepConfig.id < currentStep ? (
@@ -35,8 +35,8 @@ export const StepIndicator = ({ currentStep }: StepIndicatorProps) => {
                             <span
                                 className={`mt-2 text-xs font-medium ${
                                     stepConfig.id <= currentStep
-                                        ? 'text-gray-900'
-                                        : 'text-gray-400'
+                                        ? 'text-foreground'
+                                        : 'text-muted-foreground'
                                 }`}
                             >
                                 {stepConfig.label}

@@ -11,13 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('bookings', function (Blueprint $table) {
-            $table->id();
-            $table->string('booking_number')->unique();
-            $table->boolean('is_active')->default(true);
-            $table->text('notes')->nullable();
-            $table->timestamps();
-        });
+        Schema::dropIfExists('bookings');
     }
 
     /**
@@ -25,6 +19,12 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('bookings');
+        Schema::create('bookings', function (Blueprint $table) {
+            $table->id();
+            $table->string('booking_number')->unique();
+            $table->boolean('is_active')->default(true);
+            $table->text('notes')->nullable();
+            $table->timestamps();
+        });
     }
 };

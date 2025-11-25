@@ -140,7 +140,7 @@ export const BookingDataStep = ({
                         }}
                         placeholder="NOMBRE COMPLETO"
                         readOnly
-                        className="h-14 cursor-not-allowed border-2 bg-gray-50 px-4 text-base focus:border-[#ffcc00] focus:ring-[#ffcc00]"
+                        className="h-14 cursor-not-allowed border-2 bg-muted px-4 text-base text-foreground focus:border-[#ffcc00] focus:ring-[#ffcc00]"
                     />
                     {errors.transporter_name && (
                         <p className="text-sm text-destructive">

@@ -58,15 +58,6 @@ export interface Company {
     updated_at: string;
 }
 
-export interface Booking {
-    id: number;
-    booking_number: string;
-    is_active: boolean;
-    notes?: string;
-    created_at: string;
-    updated_at: string;
-}
-
 export interface ScheduleConfig {
     id: number;
     day_of_week: number; // 0=Domingo, 1=Lunes, 2=Martes, etc.
@@ -102,7 +93,7 @@ export interface Reservation {
     user_id: number;
     reservation_date: string;
     reservation_time: string;
-    booking_id?: number;
+    booking_number: string;
     transportista_name: string;
     truck_plate: string;
     slots_reserved: number;
@@ -116,7 +107,6 @@ export interface Reservation {
     created_at: string;
     updated_at: string;
     user?: User;
-    booking?: Booking;
     cancelledBy?: User;
 }
 

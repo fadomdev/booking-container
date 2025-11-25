@@ -15,7 +15,7 @@ class ReservationController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Reservation::with(['user', 'booking'])
+        $query = Reservation::with(['user'])
             ->orderBy('reservation_date', 'desc')
             ->orderBy('reservation_time', 'desc');
 
@@ -94,7 +94,7 @@ class ReservationController extends Controller
                     $reservation->reservation_time,
                     $reservation->transportista_name,
                     $reservation->truck_plate,
-                    $reservation->booking?->booking_number ?? '',
+                    $reservation->booking_number ?? '',
                     $reservation->slots_reserved,
                     $reservation->container_numbers ? implode(', ', $reservation->container_numbers) : '',
                     $reservation->file_info ?? '',

@@ -281,10 +281,7 @@ export default function AdminReservationsIndex({
                                                 {reservation.truck_plate}
                                             </TableCell>
                                             <TableCell>
-                                                {
-                                                    reservation.booking
-                                                        ?.booking_number
-                                                }
+                                                {reservation.booking_number}
                                             </TableCell>
                                             <TableCell>
                                                 {reservation.slots_reserved}
@@ -577,10 +574,7 @@ export default function AdminReservationsIndex({
                                 </p>
                                 <p>
                                     <strong>Booking:</strong>{' '}
-                                    {
-                                        selectedReservation.booking
-                                            ?.booking_number
-                                    }
+                                    {selectedReservation.booking_number}
                                 </p>
                             </div>
                         )}
