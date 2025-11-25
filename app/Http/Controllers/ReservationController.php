@@ -416,15 +416,31 @@ class ReservationController extends Controller
             }
 
             // Get configuration and check capacity first
+            // Check both regular schedules and special schedules
             $configs = ScheduleConfig::where('is_active', true)->get();
             $configCapacity = 0;
 
+            // First, check regular schedule configurations
             foreach ($configs as $config) {
                 $slots = $config->generateSlotsForDate($validated['reservation_date']);
                 foreach ($slots as $slot) {
                     if ($slot['time'] === $validated['reservation_time']) {
                         $configCapacity = $slot['total_capacity'];
                         break 2;
+                    }
+                }
+            }
+
+            // If not found in regular schedules, check special schedules
+            if ($configCapacity === 0) {
+                $specialSchedule = SpecialSchedule::getForDate($validated['reservation_date']);
+                if ($specialSchedule) {
+                    $specialSlots = $specialSchedule->generateSlots();
+                    foreach ($specialSlots as $slot) {
+                        if ($slot['time'] === $validated['reservation_time']) {
+                            $configCapacity = $slot['total_capacity'];
+                            break;
+                        }
                     }
                 }
             }
