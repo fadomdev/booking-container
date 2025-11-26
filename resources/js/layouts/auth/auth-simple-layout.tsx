@@ -34,7 +34,7 @@ export default function AuthSimpleLayout({
             {/* Content */}
             <div className="relative z-10 flex flex-1 flex-col items-center justify-center gap-6 p-6 md:p-10">
                 <div className="w-full max-w-md">
-                    <div className="rounded-2xl border border-white/10 bg-white p-8 shadow-2xl backdrop-blur-sm dark:bg-gray-900/95">
+                    <div className="rounded-2xl border border-white/10 bg-white p-8 shadow-2xl backdrop-blur-sm dark:border-gray-700 dark:bg-gray-900/98">
                         <div className="flex flex-col gap-8">
                             <div className="flex flex-col items-center gap-4">
                                 <Link
@@ -57,7 +57,7 @@ export default function AuthSimpleLayout({
                                 </Link>
 
                                 <div className="space-y-2 text-center">
-                                    <h1 className="text-2xl font-bold">
+                                    <h1 className="text-2xl font-bold text-foreground">
                                         {title}
                                     </h1>
                                     <p className="text-center text-sm text-muted-foreground">

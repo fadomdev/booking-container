@@ -92,23 +92,26 @@ export default function MyReservations({ reservations, filters = {} }: Props) {
             <div className="space-y-6">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-3xl font-bold tracking-tight">
+                        <h1 className="text-3xl font-bold tracking-tight text-[#003153] dark:text-white">
                             Mis Reservas
                         </h1>
                         <p className="text-muted-foreground">
                             Consulta y administra tus reservas de horarios
                         </p>
                     </div>
-                    <Button asChild>
+                    <Button
+                        asChild
+                        className="bg-[#ffcc00] text-black hover:bg-[#ffcc00]/90"
+                    >
                         <Link href="/reservations">+ Nueva Reserva</Link>
                     </Button>
                 </div>
 
                 {/* Filtros */}
-                <Card>
+                <Card className="border-l-4 border-l-[#003153] dark:border-l-[#ffcc00]">
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <Filter className="h-5 w-5" />
+                        <CardTitle className="flex items-center gap-2 text-[#003153] dark:text-white">
+                            <Filter className="h-5 w-5 text-[#ffcc00]" />
                             Filtros
                         </CardTitle>
                     </CardHeader>
@@ -152,10 +155,16 @@ export default function MyReservations({ reservations, filters = {} }: Props) {
                                 </Select>
                             </div>
                             <div className="flex gap-2">
-                                <Button onClick={applyFilters}>Aplicar</Button>
+                                <Button
+                                    onClick={applyFilters}
+                                    className="bg-[#ffcc00] text-black hover:bg-[#ffcc00]/90"
+                                >
+                                    Aplicar
+                                </Button>
                                 <Button
                                     variant="outline"
                                     onClick={clearFilters}
+                                    className="border-[#003153] text-[#003153] hover:bg-[#003153]/10 dark:border-[#ffcc00] dark:text-[#ffcc00]"
                                 >
                                     Limpiar
                                 </Button>
@@ -165,11 +174,14 @@ export default function MyReservations({ reservations, filters = {} }: Props) {
                 </Card>
 
                 {reservations.data.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-12">
+                    <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-[#003153]/30 py-12 dark:border-[#ffcc00]/30">
                         <p className="mb-4 text-sm text-muted-foreground">
                             No tienes reservas
                         </p>
-                        <Button asChild>
+                        <Button
+                            asChild
+                            className="bg-[#ffcc00] text-black hover:bg-[#ffcc00]/90"
+                        >
                             <Link href="/reservations">Nueva Reserva</Link>
                         </Button>
                     </div>
@@ -250,6 +262,15 @@ export default function MyReservations({ reservations, filters = {} }: Props) {
                                                               ? 'secondary'
                                                               : 'outline'
                                                     }
+                                                    className={
+                                                        reservation.status ===
+                                                        'active'
+                                                            ? 'bg-green-600 hover:bg-green-600/90 dark:bg-green-700'
+                                                            : reservation.status ===
+                                                                'completed'
+                                                              ? 'bg-[#003153] hover:bg-[#003153]/90 dark:bg-[#ffcc00] dark:text-black'
+                                                              : 'border-[#d40511] text-[#d40511] dark:border-[#d40511]'
+                                                    }
                                                 >
                                                     {reservation.status ===
                                                     'active'
@@ -278,7 +299,7 @@ export default function MyReservations({ reservations, filters = {} }: Props) {
                                                     <Button
                                                         variant="destructive"
                                                         size="icon"
-                                                        className="h-8 w-8"
+                                                        className="h-8 w-8 bg-[#d40511] hover:bg-[#d40511]/90"
                                                         onClick={() =>
                                                             openCancelDialog(
                                                                 reservation,
@@ -313,6 +334,7 @@ export default function MyReservations({ reservations, filters = {} }: Props) {
                                         )
                                     }
                                     disabled={!reservations.prev_page_url}
+                                    className="border-[#003153] text-[#003153] hover:bg-[#003153]/10 disabled:opacity-50 dark:border-[#ffcc00] dark:text-[#ffcc00]"
                                 >
                                     Anterior
                                 </Button>
@@ -325,6 +347,7 @@ export default function MyReservations({ reservations, filters = {} }: Props) {
                                         )
                                     }
                                     disabled={!reservations.next_page_url}
+                                    className="border-[#003153] text-[#003153] hover:bg-[#003153]/10 disabled:opacity-50 dark:border-[#ffcc00] dark:text-[#ffcc00]"
                                 >
                                     Siguiente
                                 </Button>
@@ -392,6 +415,7 @@ export default function MyReservations({ reservations, filters = {} }: Props) {
                             variant="outline"
                             onClick={() => setCancelDialogOpen(false)}
                             disabled={processing}
+                            className="border-[#003153] text-[#003153] hover:bg-[#003153]/10 dark:border-[#ffcc00] dark:text-[#ffcc00]"
                         >
                             Cancelar
                         </Button>
@@ -399,6 +423,7 @@ export default function MyReservations({ reservations, filters = {} }: Props) {
                             variant="destructive"
                             onClick={handleCancel}
                             disabled={processing}
+                            className="bg-[#d40511] hover:bg-[#d40511]/90"
                         >
                             {processing ? 'Anulando...' : 'Anular Reserva'}
                         </Button>

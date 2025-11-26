@@ -42,7 +42,10 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                     <>
                         <div className="grid gap-6">
                             <div className="grid gap-2">
-                                <Label htmlFor="rut" className="text-[#003153]">
+                                <Label
+                                    htmlFor="rut"
+                                    className="text-[#003153] dark:text-foreground"
+                                >
                                     RUT
                                 </Label>
                                 <Input
@@ -57,7 +60,7 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                                     autoComplete="username"
                                     placeholder="12345678-9"
                                     maxLength={10}
-                                    className="h-14 border-gray-300 focus:border-[#ffcc00] focus:ring-[#ffcc00]"
+                                    className="h-14 border-gray-300 focus:border-[#ffcc00] focus:ring-[#ffcc00] dark:border-gray-600 dark:bg-gray-800 dark:text-foreground dark:placeholder:text-muted-foreground"
                                 />
                                 <InputError message={errors.rut} />
                             </div>
@@ -66,14 +69,14 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                                 <div className="flex items-center">
                                     <Label
                                         htmlFor="password"
-                                        className="text-[#003153]"
+                                        className="text-[#003153] dark:text-foreground"
                                     >
                                         Contraseña
                                     </Label>
                                     {canResetPassword && (
                                         <TextLink
                                             href={request()}
-                                            className="ml-auto text-sm text-[#003153] hover:text-[#003153]/80"
+                                            className="ml-auto text-sm text-[#003153] hover:text-[#003153]/80 dark:text-primary dark:hover:text-primary/80"
                                             tabIndex={5}
                                         >
                                             ¿Olvidaste tu contraseña?
@@ -88,7 +91,7 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                                     tabIndex={2}
                                     autoComplete="current-password"
                                     placeholder="Contraseña"
-                                    className="h-14 border-gray-300 focus:border-[#ffcc00] focus:ring-[#ffcc00]"
+                                    className="h-14 border-gray-300 focus:border-[#ffcc00] focus:ring-[#ffcc00] dark:border-gray-600 dark:bg-gray-800 dark:text-foreground dark:placeholder:text-muted-foreground"
                                 />
                                 <InputError message={errors.password} />
                             </div>
@@ -101,7 +104,7 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                                 />
                                 <Label
                                     htmlFor="remember"
-                                    className="text-[#003153]"
+                                    className="text-[#003153] dark:text-foreground"
                                 >
                                     Recordarme
                                 </Label>
