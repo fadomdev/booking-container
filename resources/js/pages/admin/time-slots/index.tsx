@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/app-layout';
 import { TimeSlot } from '@/types';
-import { Head, Link, router, useForm } from '@inertiajs/react';
+import { Head, router, useForm } from '@inertiajs/react';
 import { Calendar, Eye, EyeOff, Plus } from 'lucide-react';
 import { FormEvent } from 'react';
 
@@ -52,9 +52,6 @@ export default function TimeSlotsIndex({ timeSlots, selectedDate }: Props) {
                             Administra los horarios disponibles por fecha
                         </p>
                     </div>
-                    <Button asChild variant="outline">
-                        <Link href="/admin">← Volver</Link>
-                    </Button>
                 </div>
 
                 <Card>

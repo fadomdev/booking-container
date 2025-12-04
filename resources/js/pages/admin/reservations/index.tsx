@@ -35,7 +35,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
 import { PaginatedData, Reservation } from '@/types';
-import { Head, Link, router, useForm } from '@inertiajs/react';
+import { Head, router, useForm } from '@inertiajs/react';
 import {
     Calendar,
     CheckCircle,
@@ -160,11 +160,6 @@ export default function AdminReservationsIndex({
                         <p className="text-muted-foreground">
                             Administra todas las reservas del sistema
                         </p>
-                    </div>
-                    <div className="flex gap-2">
-                        <Button asChild variant="outline">
-                            <Link href="/admin">← Volver</Link>
-                        </Button>
                     </div>
                 </div>
 

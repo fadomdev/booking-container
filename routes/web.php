@@ -54,6 +54,10 @@ Route::middleware(['auth', 'verified', App\Http\Middleware\EnsureUserIsAdmin::cl
     ->name('admin.')
     ->group(function () {
         Route::get('/', function () {
+            return redirect()->route('admin.dashboard');
+        });
+
+        Route::get('/dashboard', function () {
             return Inertia::render('admin/dashboard');
         })->name('dashboard');
 

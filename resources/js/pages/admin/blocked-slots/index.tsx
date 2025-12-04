@@ -73,9 +73,6 @@ export default function BlockedSlotsIndex({ blockedSlots }: Props) {
                                 Nuevo Bloqueo
                             </Link>
                         </Button>
-                        <Button asChild variant="outline">
-                            <Link href="/admin">← Volver</Link>
-                        </Button>
                     </div>
                 </div>
 

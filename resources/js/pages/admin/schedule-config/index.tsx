@@ -64,9 +64,6 @@ export default function ScheduleConfigIndex({ configs }: Props) {
                         </p>
                     </div>
                     <div className="flex gap-2">
-                        <Button asChild variant="outline">
-                            <Link href="/admin">← Volver</Link>
-                        </Button>
                         <Button asChild>
                             <Link href="/admin/schedule-config/create">
                                 <Plus className="mr-2 h-4 w-4" />
