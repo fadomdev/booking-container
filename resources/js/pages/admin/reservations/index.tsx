@@ -163,12 +163,6 @@ export default function AdminReservationsIndex({
                     </div>
                     <div className="flex gap-2">
                         <Button asChild variant="outline">
-                            <Link href="/admin/reservations/search">
-                                <CheckCircle className="mr-2 h-4 w-4" />
-                                Marcar Completada
-                            </Link>
-                        </Button>
-                        <Button asChild variant="outline">
                             <Link href="/admin">← Volver</Link>
                         </Button>
                     </div>

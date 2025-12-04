@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\BlockedDateController;
 use App\Http\Controllers\Admin\ReservationController as AdminReservationController;
 use App\Http\Controllers\Admin\CompanyController;
 use App\Http\Controllers\Admin\ReservationStatusController;
+use App\Http\Controllers\Admin\BlockedSlotController;
 
 Route::get('/', function () {
     // Redirect to login if not authenticated, otherwise to dashboard
@@ -94,6 +95,17 @@ Route::middleware(['auth', 'verified', App\Http\Middleware\EnsureUserIsAdmin::cl
             Route::put('/{specialSchedule}', [SpecialScheduleController::class, 'update'])->name('update');
             Route::delete('/{specialSchedule}', [SpecialScheduleController::class, 'destroy'])->name('destroy');
             Route::post('/{specialSchedule}/toggle-status', [SpecialScheduleController::class, 'toggleStatus'])->name('toggle-status');
+        });
+
+        // Blocked slots management
+        Route::prefix('blocked-slots')->name('blocked-slots.')->group(function () {
+            Route::get('/', [BlockedSlotController::class, 'index'])->name('index');
+            Route::get('/create', [BlockedSlotController::class, 'create'])->name('create');
+            Route::post('/', [BlockedSlotController::class, 'store'])->name('store');
+            Route::get('/{blockedSlot}/edit', [BlockedSlotController::class, 'edit'])->name('edit');
+            Route::put('/{blockedSlot}', [BlockedSlotController::class, 'update'])->name('update');
+            Route::delete('/{blockedSlot}', [BlockedSlotController::class, 'destroy'])->name('destroy');
+            Route::post('/{blockedSlot}/toggle-active', [BlockedSlotController::class, 'toggleActive'])->name('toggle-active');
         });
 
         // Reservation management

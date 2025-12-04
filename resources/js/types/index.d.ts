@@ -80,6 +80,30 @@ export interface BlockedDate {
     updated_at: string;
 }
 
+export interface BlockedSlot {
+    id: number;
+    date: string | null;
+    start_time: string;
+    end_time: string;
+    reason: string;
+    is_recurring: boolean;
+    is_active: boolean;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface TimeSlot {
+    id: number;
+    date: string | null;
+    start_time: string;
+    end_time: string;
+    reason: string;
+    is_recurring: boolean;
+    is_active: boolean;
+    created_at: string;
+    updated_at: string;
+}
+
 export interface TimeSlot {
     time: string;
     total_capacity: number;

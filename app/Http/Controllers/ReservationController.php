@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ScheduleConfig;
 use App\Models\SpecialSchedule;
 use App\Models\BlockedDate;
+use App\Models\BlockedSlot;
 use App\Models\Reservation;
 use App\Mail\ReservationCancelled;
 use App\Services\BookingValidationService;
@@ -65,6 +66,9 @@ class ReservationController extends Controller
         $now = now();
         $isToday = $date === $now->format('Y-m-d');
 
+        // Get blocked slots for this date
+        $blockedSlots = BlockedSlot::getActiveBlocksForDate($date);
+
         // STEP 1: Generate regular schedule slots (everyone sees these)
         $configs = ScheduleConfig::where('is_active', true)->get();
 
@@ -77,6 +81,15 @@ class ReservationController extends Controller
                     if ($slotDateTime->isPast()) {
                         continue;
                     }
+                }
+
+                // Skip blocked time slots
+                $isBlocked = $blockedSlots->contains(function ($blockedSlot) use ($slot) {
+                    return $blockedSlot->blocksTime($slot['time']);
+                });
+
+                if ($isBlocked) {
+                    continue;
                 }
 
                 $availableCapacity = Reservation::getAvailableCapacity(
@@ -130,6 +143,15 @@ class ReservationController extends Controller
                             if ($slotDateTime->isPast()) {
                                 continue;
                             }
+                        }
+
+                        // Skip blocked time slots
+                        $isBlocked = $blockedSlots->contains(function ($blockedSlot) use ($slot) {
+                            return $blockedSlot->blocksTime($slot['time']);
+                        });
+
+                        if ($isBlocked) {
+                            continue;
                         }
 
                         $availableCapacity = Reservation::getAvailableCapacity(

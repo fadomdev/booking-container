@@ -19,6 +19,7 @@ import {
     CalendarOff,
     CalendarPlus,
     ClipboardList,
+    Clock,
     LayoutGrid,
     Users,
 } from 'lucide-react';
@@ -70,6 +71,11 @@ export function AppSidebar() {
                     title: 'Fechas Bloqueadas',
                     href: '/admin/blocked-dates',
                     icon: CalendarOff,
+                },
+                {
+                    title: 'Horarios Bloqueados',
+                    href: '/admin/blocked-slots',
+                    icon: Clock,
                 },
                 {
                     title: 'Reservas',
