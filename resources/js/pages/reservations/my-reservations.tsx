@@ -89,19 +89,20 @@ export default function MyReservations({ reservations, filters = {} }: Props) {
         <AppLayout>
             <Head title="Mis Reservas" />
 
-            <div className="space-y-6">
-                <div className="flex items-center justify-between">
+            <div className="space-y-4 md:space-y-6">
+                {/* Header - Responsive */}
+                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                     <div>
-                        <h1 className="text-3xl font-bold tracking-tight text-[#003153] dark:text-white">
+                        <h1 className="text-2xl font-bold tracking-tight text-[#003153] md:text-3xl dark:text-white">
                             Mis Reservas
                         </h1>
-                        <p className="text-muted-foreground">
+                        <p className="text-sm text-muted-foreground md:text-base">
                             Consulta y administra tus reservas de horarios
                         </p>
                     </div>
                     <Button
                         asChild
-                        className="bg-[#ffcc00] text-black hover:bg-[#ffcc00]/90"
+                        className="w-full bg-[#ffcc00] text-black hover:bg-[#ffcc00]/90 md:w-auto"
                     >
                         <Link href="/reservations">+ Nueva Reserva</Link>
                     </Button>
@@ -110,14 +111,14 @@ export default function MyReservations({ reservations, filters = {} }: Props) {
                 {/* Filtros */}
                 <Card className="border-l-4 border-l-[#003153] dark:border-l-[#ffcc00]">
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-[#003153] dark:text-white">
-                            <Filter className="h-5 w-5 text-[#ffcc00]" />
+                        <CardTitle className="flex items-center gap-2 text-base text-[#003153] md:text-lg dark:text-white">
+                            <Filter className="h-4 w-4 text-[#ffcc00] md:h-5 md:w-5" />
                             Filtros
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="flex flex-wrap items-end gap-4">
-                            <div className="min-w-[200px] flex-1 space-y-2">
+                        <div className="flex flex-col gap-4 md:flex-row md:flex-wrap md:items-end">
+                            <div className="flex-1 space-y-2 md:min-w-[200px]">
                                 <label className="text-sm font-medium">
                                     Fecha
                                 </label>
@@ -130,7 +131,7 @@ export default function MyReservations({ reservations, filters = {} }: Props) {
                                     placeholder="Filtrar por fecha"
                                 />
                             </div>
-                            <div className="min-w-[200px] flex-1 space-y-2">
+                            <div className="flex-1 space-y-2 md:min-w-[200px]">
                                 <label className="text-sm font-medium">
                                     Estado
                                 </label>
@@ -148,23 +149,29 @@ export default function MyReservations({ reservations, filters = {} }: Props) {
                                         <SelectItem value="active">
                                             Activas
                                         </SelectItem>
+                                        <SelectItem value="completed">
+                                            Completadas
+                                        </SelectItem>
+                                        <SelectItem value="expired">
+                                            Expiradas
+                                        </SelectItem>
                                         <SelectItem value="cancelled">
                                             Canceladas
                                         </SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <div className="flex gap-2">
+                            <div className="flex w-full gap-2 md:w-auto">
                                 <Button
                                     onClick={applyFilters}
-                                    className="bg-[#ffcc00] text-black hover:bg-[#ffcc00]/90"
+                                    className="flex-1 bg-[#ffcc00] text-black hover:bg-[#ffcc00]/90 md:flex-none"
                                 >
                                     Aplicar
                                 </Button>
                                 <Button
                                     variant="outline"
                                     onClick={clearFilters}
-                                    className="border-[#003153] text-[#003153] hover:bg-[#003153]/10 dark:border-[#ffcc00] dark:text-[#ffcc00]"
+                                    className="flex-1 border-[#003153] text-[#003153] hover:bg-[#003153]/10 md:flex-none dark:border-[#ffcc00] dark:text-[#ffcc00]"
                                 >
                                     Limpiar
                                 </Button>
@@ -253,23 +260,18 @@ export default function MyReservations({ reservations, filters = {} }: Props) {
                                             </TableCell>
                                             <TableCell>
                                                 <Badge
-                                                    variant={
-                                                        reservation.status ===
-                                                        'active'
-                                                            ? 'default'
-                                                            : reservation.status ===
-                                                                'completed'
-                                                              ? 'secondary'
-                                                              : 'outline'
-                                                    }
+                                                    variant="default"
                                                     className={
                                                         reservation.status ===
                                                         'active'
-                                                            ? 'bg-green-600 hover:bg-green-600/90 dark:bg-green-700'
+                                                            ? 'bg-blue-600 hover:bg-blue-700'
                                                             : reservation.status ===
                                                                 'completed'
-                                                              ? 'bg-[#003153] hover:bg-[#003153]/90 dark:bg-[#ffcc00] dark:text-black'
-                                                              : 'border-[#d40511] text-[#d40511] dark:border-[#d40511]'
+                                                              ? 'bg-green-600 hover:bg-green-700'
+                                                              : reservation.status ===
+                                                                  'expired'
+                                                                ? 'bg-gray-600 hover:bg-gray-700'
+                                                                : 'bg-red-600 hover:bg-red-700'
                                                     }
                                                 >
                                                     {reservation.status ===
@@ -278,7 +280,10 @@ export default function MyReservations({ reservations, filters = {} }: Props) {
                                                         : reservation.status ===
                                                             'completed'
                                                           ? 'Completada'
-                                                          : 'Cancelada'}
+                                                          : reservation.status ===
+                                                              'expired'
+                                                            ? 'Expirada'
+                                                            : 'Cancelada'}
                                                 </Badge>
                                             </TableCell>
                                             <TableCell className="text-xs text-muted-foreground">
@@ -298,16 +303,16 @@ export default function MyReservations({ reservations, filters = {} }: Props) {
                                                     'active' && (
                                                     <Button
                                                         variant="destructive"
-                                                        size="icon"
-                                                        className="h-8 w-8 bg-[#d40511] hover:bg-[#d40511]/90"
+                                                        size="sm"
+                                                        className="bg-[#d40511] hover:bg-[#d40511]/90"
                                                         onClick={() =>
                                                             openCancelDialog(
                                                                 reservation,
                                                             )
                                                         }
-                                                        title="Anular reserva"
                                                     >
-                                                        <XCircle className="h-4 w-4" />
+                                                        <XCircle className="mr-2 h-4 w-4" />
+                                                        Anular
                                                     </Button>
                                                 )}
                                             </TableCell>

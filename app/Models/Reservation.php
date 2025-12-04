@@ -29,6 +29,8 @@ class Reservation extends Model
         'cancelled_at',
         'cancellation_comment',
         'cancelled_by',
+        'completed_at',
+        'completed_by',
     ];
 
     /**

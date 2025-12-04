@@ -19,14 +19,25 @@ class ReservationController extends Controller
             ->orderBy('reservation_date', 'desc')
             ->orderBy('reservation_time', 'desc');
 
-        // Filter by status
-        if ($request->has('status') && $request->status !== 'all') {
-            $query->where('status', $request->status);
+        // Filter by status (default to 'active' if not specified)
+        $status = $request->get('status', 'active');
+        if ($status && $status !== 'all') {
+            $query->where('status', $status);
         }
 
         // Filter by date
-        if ($request->has('date')) {
+        if ($request->has('date') && $request->date) {
             $query->where('reservation_date', $request->date);
+        }
+
+        // Filter by booking number
+        if ($request->has('booking') && $request->booking) {
+            $query->where('booking_number', 'like', '%' . $request->booking . '%');
+        }
+
+        // Filter by transportista name
+        if ($request->has('transportista') && $request->transportista) {
+            $query->where('transportista_name', 'like', '%' . $request->transportista . '%');
         }
 
         // Check if export to Excel is requested
@@ -41,7 +52,7 @@ class ReservationController extends Controller
 
         return Inertia::render('admin/reservations/index', [
             'reservations' => $reservations,
-            'filters' => $request->only(['status', 'date', 'per_page']),
+            'filters' => $request->only(['status', 'date', 'booking', 'transportista', 'per_page']),
         ]);
     }
 

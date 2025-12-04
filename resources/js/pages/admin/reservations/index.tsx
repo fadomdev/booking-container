@@ -9,13 +9,14 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-} from '@/components/ui/popover';
 import {
     Select,
     SelectContent,
@@ -35,7 +36,19 @@ import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
 import { PaginatedData, Reservation } from '@/types';
 import { Head, Link, router, useForm } from '@inertiajs/react';
-import { FileDown, Filter, Info, XCircle } from 'lucide-react';
+import {
+    Calendar,
+    CheckCircle,
+    Clock,
+    Container,
+    FileDown,
+    Filter,
+    Info,
+    MoreVertical,
+    Package,
+    Truck,
+    XCircle,
+} from 'lucide-react';
 import { useState } from 'react';
 
 interface Props {
@@ -43,6 +56,8 @@ interface Props {
     filters?: {
         status?: string;
         date?: string;
+        booking?: string;
+        transportista?: string;
         per_page?: string;
     };
 }
@@ -52,12 +67,21 @@ export default function AdminReservationsIndex({
     filters = {},
 }: Props) {
     const [filterDate, setFilterDate] = useState(filters.date || '');
-    const [filterStatus, setFilterStatus] = useState(filters.status || 'all');
+    const [filterStatus, setFilterStatus] = useState(
+        filters.status || 'active',
+    );
+    const [filterBooking, setFilterBooking] = useState(filters.booking || '');
+    const [filterTransportista, setFilterTransportista] = useState(
+        filters.transportista || '',
+    );
     const [perPage, setPerPage] = useState(filters.per_page || '20');
     const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
     const [selectedReservation, setSelectedReservation] =
         useState<Reservation | null>(null);
-    const [openFileInfoId, setOpenFileInfoId] = useState<number | null>(null);
+    const [fileInfoDialogOpen, setFileInfoDialogOpen] = useState(false);
+    const [selectedFileInfo, setSelectedFileInfo] = useState<string | null>(
+        null,
+    );
 
     const { data, setData, post, processing, reset } = useForm({
         cancellation_comment: '',
@@ -66,8 +90,10 @@ export default function AdminReservationsIndex({
     const applyFilters = () => {
         const params = new URLSearchParams();
         if (filterDate) params.set('date', filterDate);
-        if (filterStatus && filterStatus !== 'all')
-            params.set('status', filterStatus);
+        params.set('status', filterStatus); // Siempre enviar status
+        if (filterBooking) params.set('booking', filterBooking);
+        if (filterTransportista)
+            params.set('transportista', filterTransportista);
         if (perPage) params.set('per_page', perPage);
 
         router.get(`/admin/reservations?${params.toString()}`);
@@ -75,7 +101,9 @@ export default function AdminReservationsIndex({
 
     const clearFilters = () => {
         setFilterDate('');
-        setFilterStatus('all');
+        setFilterStatus('active');
+        setFilterBooking('');
+        setFilterTransportista('');
         setPerPage('20');
         router.get('/admin/reservations');
     };
@@ -83,8 +111,7 @@ export default function AdminReservationsIndex({
     const exportToExcel = () => {
         const params = new URLSearchParams();
         if (filterDate) params.set('date', filterDate);
-        if (filterStatus && filterStatus !== 'all')
-            params.set('status', filterStatus);
+        params.set('status', filterStatus); // Siempre enviar status
         params.set('export', 'excel');
 
         window.location.href = `/admin/reservations?${params.toString()}`;
@@ -94,8 +121,7 @@ export default function AdminReservationsIndex({
         setPerPage(value);
         const params = new URLSearchParams(window.location.search);
         if (filterDate) params.set('date', filterDate);
-        if (filterStatus && filterStatus !== 'all')
-            params.set('status', filterStatus);
+        params.set('status', filterStatus); // Siempre enviar status
         params.set('per_page', value);
         params.delete('page'); // Reset to first page when changing per_page
 
@@ -125,18 +151,27 @@ export default function AdminReservationsIndex({
             <Head title="Gestión de Reservas" />
 
             <div className="space-y-6">
-                <div className="flex items-center justify-between">
+                {/* Header Mejorado */}
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <h1 className="text-3xl font-bold tracking-tight">
-                            Todas las Reservas
+                            Gestión de Reservas
                         </h1>
                         <p className="text-muted-foreground">
-                            Consulta todas las reservas del sistema
+                            Administra todas las reservas del sistema
                         </p>
                     </div>
-                    <Button asChild variant="outline">
-                        <Link href="/admin">← Volver</Link>
-                    </Button>
+                    <div className="flex gap-2">
+                        <Button asChild variant="outline">
+                            <Link href="/admin/reservations/search">
+                                <CheckCircle className="mr-2 h-4 w-4" />
+                                Marcar Completada
+                            </Link>
+                        </Button>
+                        <Button asChild variant="outline">
+                            <Link href="/admin">← Volver</Link>
+                        </Button>
+                    </div>
                 </div>
 
                 <Card>
@@ -163,6 +198,32 @@ export default function AdminReservationsIndex({
                             </div>
                             <div className="min-w-[200px] flex-1 space-y-2">
                                 <label className="text-sm font-medium">
+                                    Número de Booking
+                                </label>
+                                <Input
+                                    type="text"
+                                    value={filterBooking}
+                                    onChange={(e) =>
+                                        setFilterBooking(e.target.value)
+                                    }
+                                    placeholder="Buscar por booking..."
+                                />
+                            </div>
+                            <div className="min-w-[200px] flex-1 space-y-2">
+                                <label className="text-sm font-medium">
+                                    Transportista
+                                </label>
+                                <Input
+                                    type="text"
+                                    value={filterTransportista}
+                                    onChange={(e) =>
+                                        setFilterTransportista(e.target.value)
+                                    }
+                                    placeholder="Buscar por transportista..."
+                                />
+                            </div>
+                            <div className="min-w-[200px] flex-1 space-y-2">
+                                <label className="text-sm font-medium">
                                     Estado
                                 </label>
                                 <Select
@@ -178,6 +239,12 @@ export default function AdminReservationsIndex({
                                         </SelectItem>
                                         <SelectItem value="active">
                                             Activas
+                                        </SelectItem>
+                                        <SelectItem value="completed">
+                                            Completadas
+                                        </SelectItem>
+                                        <SelectItem value="expired">
+                                            Expiradas
                                         </SelectItem>
                                         <SelectItem value="cancelled">
                                             Canceladas
@@ -232,206 +299,263 @@ export default function AdminReservationsIndex({
 
                 <Card>
                     <CardContent className="p-0">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Fecha</TableHead>
-                                    <TableHead>Hora</TableHead>
-                                    <TableHead>Transportista</TableHead>
-                                    <TableHead>Patente</TableHead>
-                                    <TableHead>Booking</TableHead>
-                                    <TableHead>Cupos</TableHead>
-                                    <TableHead>Contenedores</TableHead>
-                                    <TableHead>Usuario</TableHead>
-                                    <TableHead>Estado</TableHead>
-                                    <TableHead>Creada</TableHead>
-                                    <TableHead>File Info</TableHead>
-                                    <TableHead>Acciones</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {reservations.data.length === 0 ? (
+                        <div className="overflow-x-auto">
+                            <Table>
+                                <TableHeader>
                                     <TableRow>
-                                        <TableCell
-                                            colSpan={12}
-                                            className="h-24 text-center"
-                                        >
-                                            No se encontraron reservas con los
-                                            filtros aplicados
-                                        </TableCell>
+                                        <TableHead>Fecha</TableHead>
+                                        <TableHead>Hora</TableHead>
+                                        <TableHead>Transportista</TableHead>
+                                        <TableHead>Booking</TableHead>
+                                        <TableHead>Patente</TableHead>
+                                        <TableHead>Contenedores</TableHead>
+                                        <TableHead>Estado</TableHead>
+                                        <TableHead>Creada</TableHead>
+                                        <TableHead className="text-right">
+                                            Acciones
+                                        </TableHead>
                                     </TableRow>
-                                ) : (
-                                    reservations.data.map((reservation) => (
-                                        <TableRow key={reservation.id}>
-                                            <TableCell>
-                                                {reservation.reservation_date &&
-                                                    new Date(
-                                                        reservation.reservation_date,
-                                                    ).toLocaleDateString(
-                                                        'es-CL',
-                                                    )}
-                                            </TableCell>
-                                            <TableCell>
-                                                {reservation.reservation_time}
-                                            </TableCell>
-                                            <TableCell>
-                                                {reservation.transportista_name}
-                                            </TableCell>
-                                            <TableCell className="font-mono uppercase">
-                                                {reservation.truck_plate}
-                                            </TableCell>
-                                            <TableCell>
-                                                {reservation.booking_number}
-                                            </TableCell>
-                                            <TableCell>
-                                                {reservation.slots_reserved}
-                                            </TableCell>
-                                            <TableCell>
-                                                {reservation.container_numbers &&
-                                                reservation.container_numbers
-                                                    .length > 0 ? (
-                                                    <div className="flex flex-col gap-1 font-mono text-xs">
-                                                        {reservation.container_numbers.map(
-                                                            (
-                                                                container,
-                                                                idx,
-                                                            ) => (
-                                                                <div key={idx}>
-                                                                    {container}
-                                                                </div>
-                                                            ),
-                                                        )}
-                                                    </div>
-                                                ) : (
-                                                    <span className="text-muted-foreground">
-                                                        -
-                                                    </span>
-                                                )}
-                                            </TableCell>
-                                            <TableCell>
-                                                {reservation.user?.name}
-                                            </TableCell>
-                                            <TableCell>
-                                                <Badge
-                                                    variant={
-                                                        reservation.status ===
-                                                        'active'
-                                                            ? 'default'
-                                                            : reservation.status ===
-                                                                'completed'
-                                                              ? 'secondary'
-                                                              : 'outline'
-                                                    }
-                                                >
-                                                    {reservation.status ===
-                                                    'active'
-                                                        ? 'Activa'
-                                                        : reservation.status ===
-                                                            'completed'
-                                                          ? 'Completada'
-                                                          : 'Cancelada'}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell className="text-xs text-muted-foreground">
-                                                {reservation.created_at &&
-                                                    new Date(
-                                                        reservation.created_at,
-                                                    ).toLocaleString('es-CL', {
-                                                        day: '2-digit',
-                                                        month: '2-digit',
-                                                        year: 'numeric',
-                                                        hour: '2-digit',
-                                                        minute: '2-digit',
-                                                    })}
-                                            </TableCell>
-                                            <TableCell>
-                                                {reservation.file_info ? (
-                                                    <Popover
-                                                        open={
-                                                            openFileInfoId ===
-                                                            reservation.id
-                                                        }
-                                                        onOpenChange={(open) =>
-                                                            setOpenFileInfoId(
-                                                                open
-                                                                    ? reservation.id
-                                                                    : null,
-                                                            )
-                                                        }
-                                                    >
-                                                        <PopoverTrigger asChild>
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                className="h-8 w-8"
-                                                                title="Ver File Info"
-                                                            >
-                                                                <Info className="h-4 w-4 text-blue-600" />
-                                                            </Button>
-                                                        </PopoverTrigger>
-                                                        <PopoverContent
-                                                            className="w-80"
-                                                            align="end"
-                                                        >
-                                                            <div className="space-y-2">
-                                                                <h4 className="text-sm font-semibold">
-                                                                    File Info
-                                                                </h4>
-                                                                <div className="rounded-md border bg-blue-50 p-3 text-sm text-blue-900">
-                                                                    {reservation.file_info
-                                                                        .split(
-                                                                            ' - ',
-                                                                        )
-                                                                        .map(
-                                                                            (
-                                                                                part,
-                                                                                idx,
-                                                                            ) => (
-                                                                                <div
-                                                                                    key={
-                                                                                        idx
-                                                                                    }
-                                                                                    className="leading-relaxed"
-                                                                                >
-                                                                                    {
-                                                                                        part
-                                                                                    }
-                                                                                </div>
-                                                                            ),
-                                                                        )}
-                                                                </div>
-                                                            </div>
-                                                        </PopoverContent>
-                                                    </Popover>
-                                                ) : (
-                                                    <span className="text-xs text-muted-foreground">
-                                                        -
-                                                    </span>
-                                                )}
-                                            </TableCell>
-                                            <TableCell>
-                                                {reservation.status ===
-                                                    'active' && (
-                                                    <Button
-                                                        variant="destructive"
-                                                        size="icon"
-                                                        className="h-8 w-8"
-                                                        onClick={() =>
-                                                            openCancelDialog(
-                                                                reservation,
-                                                            )
-                                                        }
-                                                        title="Anular reserva"
-                                                    >
-                                                        <XCircle className="h-4 w-4" />
-                                                    </Button>
-                                                )}
+                                </TableHeader>
+                                <TableBody>
+                                    {reservations.data.length === 0 ? (
+                                        <TableRow>
+                                            <TableCell
+                                                colSpan={9}
+                                                className="h-24 text-center"
+                                            >
+                                                No se encontraron reservas con
+                                                los filtros aplicados
                                             </TableCell>
                                         </TableRow>
-                                    ))
-                                )}
-                            </TableBody>
-                        </Table>
+                                    ) : (
+                                        reservations.data.map((reservation) => (
+                                            <TableRow key={reservation.id}>
+                                                {/* Fecha */}
+                                                <TableCell>
+                                                    <div className="flex items-center gap-2">
+                                                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                                                        <span className="font-medium">
+                                                            {reservation.reservation_date &&
+                                                                new Date(
+                                                                    reservation.reservation_date,
+                                                                ).toLocaleDateString(
+                                                                    'es-CL',
+                                                                )}
+                                                        </span>
+                                                    </div>
+                                                </TableCell>
+
+                                                {/* Hora */}
+                                                <TableCell>
+                                                    <div className="flex items-center gap-2">
+                                                        <Clock className="h-4 w-4 text-muted-foreground" />
+                                                        <span>
+                                                            {
+                                                                reservation.reservation_time
+                                                            }
+                                                        </span>
+                                                    </div>
+                                                </TableCell>
+
+                                                {/* Transportista */}
+                                                <TableCell>
+                                                    <div className="flex items-center gap-2">
+                                                        <Truck className="h-4 w-4 text-muted-foreground" />
+                                                        <div>
+                                                            <div className="font-medium">
+                                                                {
+                                                                    reservation.transportista_name
+                                                                }
+                                                            </div>
+                                                            <div className="text-xs text-muted-foreground">
+                                                                {
+                                                                    reservation
+                                                                        .user
+                                                                        ?.name
+                                                                }
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </TableCell>
+
+                                                {/* Booking */}
+                                                <TableCell>
+                                                    <div className="flex items-center gap-2">
+                                                        <Package className="h-4 w-4 text-muted-foreground" />
+                                                        <span className="font-mono">
+                                                            {
+                                                                reservation.booking_number
+                                                            }
+                                                        </span>
+                                                    </div>
+                                                </TableCell>
+
+                                                {/* Patente */}
+                                                <TableCell>
+                                                    <span className="font-mono text-sm uppercase">
+                                                        {
+                                                            reservation.truck_plate
+                                                        }
+                                                    </span>
+                                                </TableCell>
+
+                                                {/* Contenedores */}
+                                                <TableCell>
+                                                    {reservation.container_numbers &&
+                                                    reservation
+                                                        .container_numbers
+                                                        .length > 0 ? (
+                                                        <div className="flex items-center gap-2">
+                                                            <Container className="h-4 w-4 text-muted-foreground" />
+                                                            <div className="flex flex-col gap-1">
+                                                                {reservation.container_numbers.map(
+                                                                    (
+                                                                        container,
+                                                                        idx,
+                                                                    ) => (
+                                                                        <span
+                                                                            key={
+                                                                                idx
+                                                                            }
+                                                                            className="font-mono text-xs"
+                                                                        >
+                                                                            {
+                                                                                container
+                                                                            }
+                                                                        </span>
+                                                                    ),
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <span className="text-muted-foreground">
+                                                            -
+                                                        </span>
+                                                    )}
+                                                </TableCell>
+
+                                                {/* Estado */}
+                                                <TableCell>
+                                                    <Badge
+                                                        variant={
+                                                            reservation.status ===
+                                                            'active'
+                                                                ? 'default'
+                                                                : reservation.status ===
+                                                                    'completed'
+                                                                  ? 'secondary'
+                                                                  : reservation.status ===
+                                                                      'expired'
+                                                                    ? 'destructive'
+                                                                    : 'outline'
+                                                        }
+                                                        className={
+                                                            reservation.status ===
+                                                            'completed'
+                                                                ? 'bg-green-600 hover:bg-green-700'
+                                                                : reservation.status ===
+                                                                    'expired'
+                                                                  ? 'bg-gray-600 hover:bg-gray-700'
+                                                                  : ''
+                                                        }
+                                                    >
+                                                        {reservation.status ===
+                                                        'active'
+                                                            ? 'Activa'
+                                                            : reservation.status ===
+                                                                'completed'
+                                                              ? 'Completada'
+                                                              : reservation.status ===
+                                                                  'expired'
+                                                                ? 'Expirada'
+                                                                : 'Cancelada'}
+                                                    </Badge>
+                                                </TableCell>
+
+                                                {/* Fecha de Creación */}
+                                                <TableCell className="text-sm text-muted-foreground">
+                                                    {reservation.created_at &&
+                                                        new Date(
+                                                            reservation.created_at,
+                                                        ).toLocaleDateString(
+                                                            'es-CL',
+                                                            {
+                                                                day: '2-digit',
+                                                                month: '2-digit',
+                                                                year: 'numeric',
+                                                            },
+                                                        )}
+                                                </TableCell>
+
+                                                {/* Acciones */}
+                                                <TableCell className="text-right">
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger
+                                                            asChild
+                                                        >
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                            >
+                                                                <MoreVertical className="h-4 w-4" />
+                                                            </Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="end">
+                                                            {reservation.file_info && (
+                                                                <DropdownMenuItem
+                                                                    onSelect={() => {
+                                                                        setSelectedFileInfo(
+                                                                            reservation.file_info ||
+                                                                                null,
+                                                                        );
+                                                                        setFileInfoDialogOpen(
+                                                                            true,
+                                                                        );
+                                                                    }}
+                                                                >
+                                                                    <Info className="mr-2 h-4 w-4" />
+                                                                    Ver File
+                                                                    Info
+                                                                </DropdownMenuItem>
+                                                            )}
+                                                            {reservation.status ===
+                                                                'active' && (
+                                                                <>
+                                                                    <DropdownMenuItem
+                                                                        onSelect={() =>
+                                                                            router.visit(
+                                                                                `/admin/reservations/${reservation.id}/show`,
+                                                                            )
+                                                                        }
+                                                                    >
+                                                                        <CheckCircle className="mr-2 h-4 w-4 text-green-600" />
+                                                                        Marcar
+                                                                        como
+                                                                        completada
+                                                                    </DropdownMenuItem>
+                                                                    <DropdownMenuItem
+                                                                        onSelect={() =>
+                                                                            openCancelDialog(
+                                                                                reservation,
+                                                                            )
+                                                                        }
+                                                                        className="text-destructive"
+                                                                    >
+                                                                        <XCircle className="mr-2 h-4 w-4" />
+                                                                        Anular
+                                                                        reserva
+                                                                    </DropdownMenuItem>
+                                                                </>
+                                                            )}
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </div>
                     </CardContent>
                 </Card>
 
@@ -542,6 +666,40 @@ export default function AdminReservationsIndex({
                     </div>
                 )}
             </div>
+
+            {/* File Info Dialog */}
+            <Dialog
+                open={fileInfoDialogOpen}
+                onOpenChange={setFileInfoDialogOpen}
+            >
+                <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                        <DialogTitle>Información del File</DialogTitle>
+                        <DialogDescription>
+                            Detalles del file asociado a la reserva
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="max-h-96 overflow-auto rounded-md border bg-muted p-4">
+                        {selectedFileInfo &&
+                            selectedFileInfo.split(' - ').map((part, idx) => (
+                                <div
+                                    key={idx}
+                                    className="mb-2 text-sm leading-relaxed"
+                                >
+                                    {part}
+                                </div>
+                            ))}
+                    </div>
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => setFileInfoDialogOpen(false)}
+                        >
+                            Cerrar
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             {/* Cancel Dialog */}
             <Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>

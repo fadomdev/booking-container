@@ -100,14 +100,17 @@ export interface Reservation {
     container_numbers?: string[];
     api_notes?: string;
     file_info?: string;
-    status: 'active' | 'cancelled' | 'completed';
+    status: 'active' | 'cancelled' | 'completed' | 'expired';
     cancelled_at?: string;
     cancellation_comment?: string;
     cancelled_by?: number;
+    completed_at?: string;
+    completed_by?: number;
     created_at: string;
     updated_at: string;
     user?: User;
     cancelledBy?: User;
+    completedBy?: User;
 }
 
 export interface PaginatedData<T> {
