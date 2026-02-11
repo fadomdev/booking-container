@@ -14,6 +14,7 @@ import AppLayout from '@/layouts/app-layout';
 import { RESERVATION_STEPS } from '@/lib/reservations/constants';
 import { TimeSlot } from '@/types';
 import { Head, router, useForm, usePage } from '@inertiajs/react';
+import axios from 'axios';
 import { AlertCircle, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { FormEvent, useEffect, useState } from 'react';
 
@@ -23,6 +24,7 @@ interface Props {
     blockedDates?: string[];
     isBlocked?: boolean;
     blockReason?: string;
+    containerApiUrl?: string;
 }
 
 export default function CreateReservation({
@@ -30,12 +32,18 @@ export default function CreateReservation({
     selectedDate,
     isBlocked = false,
     blockReason = '',
+    containerApiUrl = '',
 }: Props) {
     // Wizard steps state
     const [currentStep, setCurrentStep] = useState(1);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [showPlateHistoryDialog, setShowPlateHistoryDialog] = useState(false);
+
+    // Error state
+    const [containerExistsError, setContainerExistsError] = useState<{
+        [key: string]: string;
+    } | null>(null);
 
     // Custom hooks
     const { validation: bookingValidation, validateBooking } =
@@ -99,6 +107,7 @@ export default function CreateReservation({
         container_numbers: [''],
         api_notes: '',
         file_info: '',
+        flexitank_code: '',
     });
 
     // Handle date change
@@ -135,8 +144,6 @@ export default function CreateReservation({
 
     const handleNextStep = async () => {
         clearErrors();
-        console.log('📊 Booking Validation:', bookingValidation);
-        console.log('📦 Container Validation:', containerValidation);
 
         if (currentStep === 2 && !bookingValidation.valid) {
             const isValid = await validateBooking(data.booking_number);
@@ -153,6 +160,7 @@ export default function CreateReservation({
     };
 
     const handlePreviousStep = () => {
+        setContainerExistsError(null);
         setCurrentStep((prev) => Math.max(prev - 1, 1));
     };
 
@@ -178,10 +186,6 @@ export default function CreateReservation({
         setData('container_numbers', newContainers);
     };
 
-    useEffect(() => {
-        console.log('Component mounted: ', bookingValidation);
-    }, [bookingValidation]);
-
     // Submit form
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
@@ -193,6 +197,41 @@ export default function CreateReservation({
         setIsSubmitting(true);
         clearErrors();
 
+        // VALIDACIÓN CRÍTICA: Verificar capacidad disponible ANTES de enviar a API externa
+        // Esto previene contenedores huérfanos si Laravel rechaza la reserva después
+        try {
+            const prevalidationResponse = await axios.post(
+                '/reservations/pre-validate',
+                {
+                    reservation_date: data.reservation_date,
+                    reservation_time: data.reservation_time,
+                    slots_requested: data.slots_requested,
+                    booking_number: data.booking_number,
+                    container_numbers: data.container_numbers,
+                },
+            );
+
+            if (!prevalidationResponse.data.valid) {
+                setContainerExistsError({
+                    container_numbers: prevalidationResponse.data.message,
+                });
+                setIsSubmitting(false);
+                return;
+            }
+        } catch (error: unknown) {
+            const errorMsg =
+                error instanceof Error
+                    ? error.message
+                    : (error as { response?: { data?: { message?: string } } })
+                          ?.response?.data?.message ||
+                      'Error al validar la reserva. Por favor intente nuevamente.';
+            setContainerExistsError({
+                container_numbers: errorMsg,
+            });
+            setIsSubmitting(false);
+            return;
+        }
+
         // Send containers to API using the hook
         const result = await submitContainers({
             booking_number: data.booking_number,
@@ -201,27 +240,49 @@ export default function CreateReservation({
             ),
             transporter_name: data.transporter_name,
             truck_plate: data.truck_plate,
+            trucking_company:
+                page.props.auth.user.company?.name || 'Sin empresa',
+            apiUrl: containerApiUrl,
         });
+
+        // Si hubo un error al guardar los contenedores, no continuar con la reserva
+        if (!result.success) {
+            console.error(
+                '❌ Error al guardar contenedores en API externa:',
+                result.errors,
+            );
+            // Mostrar errores de contenedores que ya existen u otros errores de la API
+            setContainerExistsError({
+                container_numbers: result.errors.join('\n'),
+            });
+            setIsSubmitting(false);
+            return;
+        }
+
+        console.log('✅ Contenedores guardados en API externa exitosamente');
 
         // Create complete data object with api_notes and file_info
         const submissionData = {
             ...data,
             api_notes: result.notes,
             file_info: bookingValidation.fileInfo || '',
+            flexitank_code: bookingValidation.flexitank_code,
         };
-
-        console.log('📝 Datos completos a enviar:', submissionData);
-        console.log('  - api_notes:', submissionData.api_notes);
-        console.log('  - file_info:', submissionData.file_info);
 
         // Submit directly using Inertia router
         router.post('/reservations', submissionData, {
             preserveScroll: true,
-            preserveState: true,
             onSuccess: () => {
                 setIsSubmitting(false);
             },
-            onError: () => {
+            onError: (errors) => {
+                setContainerExistsError(
+                    errors.container_numbers
+                        ? {
+                              container_numbers: errors.container_numbers,
+                          }
+                        : null,
+                );
                 setIsSubmitting(false);
             },
         });
@@ -237,6 +298,13 @@ export default function CreateReservation({
             setIsSubmitting(false);
         }
     }, [page.props.flash, savePlateToHistory]);
+
+    // Keep user on step 4 if there are validation errors
+    useEffect(() => {
+        if (Object.keys(errors).length > 0 && currentStep !== 4) {
+            setCurrentStep(4);
+        }
+    }, [errors, currentStep]);
 
     // Update container numbers when slots change
     useEffect(() => {
@@ -319,6 +387,34 @@ export default function CreateReservation({
 
                 <StepIndicator currentStep={currentStep} />
 
+                {/* Error Messages */}
+                {Object.keys(errors).length > 0 && (
+                    <Card className="border-destructive bg-destructive/5">
+                        <CardContent className="pt-6">
+                            <div className="flex items-start gap-3">
+                                <AlertCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-destructive" />
+                                <div className="flex-1">
+                                    <p className="mb-2 font-medium text-destructive">
+                                        Error en la validación
+                                    </p>
+                                    <ul className="space-y-1 text-sm">
+                                        {Object.entries(errors).map(
+                                            ([key, message]) => (
+                                                <li
+                                                    key={key}
+                                                    className="text-destructive"
+                                                >
+                                                    {message}
+                                                </li>
+                                            ),
+                                        )}
+                                    </ul>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
+
                 <form
                     onSubmit={(e) => e.preventDefault()}
                     className="space-y-6"
@@ -383,6 +479,7 @@ export default function CreateReservation({
                         <ConfirmationStep
                             data={data}
                             containerValidation={containerValidation}
+                            errors={containerExistsError}
                         />
                     )}
 

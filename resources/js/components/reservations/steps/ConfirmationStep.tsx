@@ -6,7 +6,14 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import { Calendar, CheckCircle2, Clock, Loader2, Package } from 'lucide-react';
+import {
+    AlertCircle,
+    Calendar,
+    CheckCircle2,
+    Clock,
+    Loader2,
+    Package,
+} from 'lucide-react';
 
 interface ConfirmationStepProps {
     data: {
@@ -22,11 +29,13 @@ interface ConfirmationStepProps {
         validating: boolean;
         message: string;
     };
+    errors?: Record<string, string> | null;
 }
 
 export const ConfirmationStep = ({
     data,
     containerValidation,
+    errors = {},
 }: ConfirmationStepProps) => {
     return (
         <Card>
@@ -126,6 +135,7 @@ export const ConfirmationStep = ({
                             <CheckCircle2 className="h-4 w-4" />
                             Contenedores
                         </h3>
+
                         <div className="space-y-2">
                             {data.container_numbers.map((container, idx) => (
                                 <div
@@ -145,6 +155,35 @@ export const ConfirmationStep = ({
                             ))}
                         </div>
                     </div>
+
+                    {/* Error Message for Container Numbers */}
+                    {errors?.container_numbers && (
+                        <div className="rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-950/20">
+                            <div className="flex items-start gap-2">
+                                <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-600 dark:text-red-400" />
+                                <div className="flex-1">
+                                    <p className="mb-2 text-sm font-semibold text-red-800 dark:text-red-300">
+                                        Error al registrar contenedores:
+                                    </p>
+                                    <ul className="space-y-1 text-sm text-red-700 dark:text-red-400">
+                                        {errors.container_numbers
+                                            .split('\n')
+                                            .map((error, idx) => (
+                                                <li
+                                                    key={idx}
+                                                    className="flex items-start gap-1"
+                                                >
+                                                    <span className="text-red-500">
+                                                        •
+                                                    </span>
+                                                    {error}
+                                                </li>
+                                            ))}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {containerValidation.validating && (

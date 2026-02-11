@@ -5,6 +5,7 @@ interface BookingValidationState {
     message: string;
     validating: boolean;
     fileInfo?: string | null;
+    flexitank_code?: string | null;
 }
 
 export const useBookingValidation = () => {
@@ -65,6 +66,7 @@ export const useBookingValidation = () => {
                 message: result.message,
                 validating: false,
                 fileInfo: fileInfoFormatted,
+                flexitank_code: result.data?.data?.flexitank_code || null,
             });
 
             return result.valid;
@@ -73,6 +75,8 @@ export const useBookingValidation = () => {
                 valid: false,
                 message: 'Error al validar el booking',
                 validating: false,
+                fileInfo: null,
+                flexitank_code: null,
             });
             return false;
         }
@@ -84,6 +88,7 @@ export const useBookingValidation = () => {
             message: '',
             validating: false,
             fileInfo: null,
+            flexitank_code: null,
         });
     };
 

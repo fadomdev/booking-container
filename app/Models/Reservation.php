@@ -25,6 +25,7 @@ class Reservation extends Model
         'container_numbers',
         'api_notes',
         'file_info',
+        'flexitank_code',
         'status',
         'cancelled_at',
         'cancellation_comment',

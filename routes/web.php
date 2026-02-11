@@ -22,6 +22,36 @@ Route::get('/', function () {
     return redirect()->route('login');
 })->name('home');
 
+// Cron route for updating expired reservations
+Route::get('/cron/update-expired-reservations', function () {
+    $token = request()->query('token');
+    $expectedToken = config('app.cron_token', 'your-secret-token-here');
+
+    if ($token !== $expectedToken) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Unauthorized'
+        ], 401);
+    }
+
+    try {
+        \Illuminate\Support\Facades\Artisan::call('reservations:update-expired');
+        $output = \Illuminate\Support\Facades\Artisan::output();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Reservations updated successfully',
+            'output' => $output
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Error updating reservations',
+            'error' => $e->getMessage()
+        ], 500);
+    }
+})->name('cron.update-expired');
+
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', function () {
         $user = Auth::user();
@@ -44,7 +74,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/my-reservations', [ReservationController::class, 'myReservations'])->name('my-reservations');
         Route::post('/{reservation}/cancel', [ReservationController::class, 'cancel'])->name('cancel');
         Route::post('/validate-booking', [ReservationController::class, 'validateBooking'])->name('validate-booking');
-        Route::post('/send-containers', [ReservationController::class, 'sendContainersToApi'])->name('send-containers');
+        Route::post('/validate-containers', [ReservationController::class, 'validateContainers'])->name('validate-containers');
+        Route::post('/pre-validate', [ReservationController::class, 'preValidate'])->name('pre-validate');
     });
 });
 

@@ -123,4 +123,16 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Cron Token
+    |--------------------------------------------------------------------------
+    |
+    | This token is used to protect cron job endpoints from unauthorized access.
+    | Set a random, secure string in your .env file.
+    |
+    */
+
+    'cron_token' => env('CRON_TOKEN', 'default-insecure-token'),
+
 ];

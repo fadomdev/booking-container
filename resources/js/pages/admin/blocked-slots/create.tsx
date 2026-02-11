@@ -4,6 +4,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { TimeSelect } from '@/components/ui/time-select';
 import AppLayout from '@/layouts/app-layout';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { Save } from 'lucide-react';
@@ -82,17 +83,14 @@ export default function CreateBlockedSlot() {
                                             *
                                         </span>
                                     </Label>
-                                    <Input
-                                        id="start_time"
-                                        type="time"
-                                        required
+                                    <TimeSelect
                                         value={data.start_time}
-                                        onChange={(e) =>
-                                            setData(
-                                                'start_time',
-                                                e.target.value,
-                                            )
+                                        onChange={(value) =>
+                                            setData('start_time', value)
                                         }
+                                        minuteInterval={5}
+                                        minHour={6}
+                                        maxHour={22}
                                     />
                                     {errors.start_time && (
                                         <p className="text-sm text-destructive">
@@ -108,14 +106,14 @@ export default function CreateBlockedSlot() {
                                             *
                                         </span>
                                     </Label>
-                                    <Input
-                                        id="end_time"
-                                        type="time"
-                                        required
+                                    <TimeSelect
                                         value={data.end_time}
-                                        onChange={(e) =>
-                                            setData('end_time', e.target.value)
+                                        onChange={(value) =>
+                                            setData('end_time', value)
                                         }
+                                        minuteInterval={5}
+                                        minHour={6}
+                                        maxHour={22}
                                     />
                                     {errors.end_time && (
                                         <p className="text-sm text-destructive">

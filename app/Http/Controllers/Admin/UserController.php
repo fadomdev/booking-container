@@ -15,15 +15,43 @@ class UserController extends Controller
     /**
      * Display a listing of users.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $users = User::with('company:id,name')
-            ->select('id', 'name', 'rut', 'email', 'role', 'company_id', 'created_at')
-            ->orderBy('created_at', 'desc')
-            ->paginate(15);
+        $query = User::with('company:id,name')
+            ->select('id', 'name', 'rut', 'email', 'role', 'company_id', 'created_at');
+
+        // Filtro de búsqueda
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('rut', 'like', "%{$search}%");
+            });
+        }
+
+        // Filtro por rol
+        if ($request->filled('role') && $request->role !== 'all') {
+            $query->where('role', $request->role);
+        }
+
+        // Filtro por empresa (búsqueda por nombre)
+        if ($request->filled('company')) {
+            $companySearch = $request->company;
+            $query->whereHas('company', function ($q) use ($companySearch) {
+                $q->where('name', 'like', "%{$companySearch}%");
+            });
+        }
+
+        $users = $query->orderBy('created_at', 'desc')->paginate(15)->withQueryString();
 
         return Inertia::render('admin/users/index', [
             'users' => $users,
+            'filters' => [
+                'search' => $request->search ?? '',
+                'role' => $request->role ?? 'all',
+                'company' => $request->company ?? '',
+            ],
         ]);
     }
 

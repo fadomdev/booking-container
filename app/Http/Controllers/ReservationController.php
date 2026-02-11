@@ -11,7 +11,6 @@ use App\Mail\ReservationCancelled;
 use App\Services\BookingValidationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Inertia\Inertia;
@@ -42,6 +41,7 @@ class ReservationController extends Controller
                 'isBlocked' => true,
                 'blockReason' => $blockedDate->reason ?? 'Fecha no disponible',
                 'blockedDates' => $blockedDates,
+                'containerApiUrl' => config('services.booking_api.url'),
             ]);
         }
 
@@ -53,6 +53,7 @@ class ReservationController extends Controller
             'selectedDate' => $date,
             'isBlocked' => false,
             'blockedDates' => $blockedDates,
+            'containerApiUrl' => config('services.booking_api.url'),
         ]);
     }
 
@@ -70,10 +71,11 @@ class ReservationController extends Controller
         $blockedSlots = BlockedSlot::getActiveBlocksForDate($date);
 
         // STEP 1: Generate regular schedule slots (everyone sees these)
+        // Pass blocked slots to generateSlotsForDate so it can restart from block end times
         $configs = ScheduleConfig::where('is_active', true)->get();
 
         foreach ($configs as $config) {
-            $slots = $config->generateSlotsForDate($date);
+            $slots = $config->generateSlotsForDate($date, $blockedSlots);
             foreach ($slots as $slot) {
                 // Skip past time slots if it's today
                 if ($isToday) {
@@ -81,15 +83,6 @@ class ReservationController extends Controller
                     if ($slotDateTime->isPast()) {
                         continue;
                     }
-                }
-
-                // Skip blocked time slots
-                $isBlocked = $blockedSlots->contains(function ($blockedSlot) use ($slot) {
-                    return $blockedSlot->blocksTime($slot['time']);
-                });
-
-                if ($isBlocked) {
-                    continue;
                 }
 
                 $availableCapacity = Reservation::getAvailableCapacity(
@@ -204,191 +197,219 @@ class ReservationController extends Controller
     }
 
     /**
-     * Send containers to external API before creating reservation.
+     * Pre-validate ALL reservation conditions BEFORE sending containers to external API.
+     * This prevents orphaned containers in the external system.
+     * Validates: date blocking, time availability, capacity, container format/duplicates
      */
-    public function sendContainersToApi(Request $request)
+    public function preValidate(Request $request)
+    {
+        $validated = $request->validate([
+            'reservation_date' => ['required', 'date', 'after_or_equal:today'],
+            'reservation_time' => ['required', 'date_format:H:i'],
+            'booking_number' => ['required', 'string', 'max:255'],
+            'slots_requested' => ['required', 'integer', 'min:1'],
+            'container_numbers' => ['required', 'array'],
+            'container_numbers.*' => ['required', 'string', 'max:20'],
+        ]);
+
+        // 1. Check if date is blocked
+        if (BlockedDate::isDateBlocked($validated['reservation_date'])) {
+            return response()->json([
+                'valid' => false,
+                'message' => 'Esta fecha no está disponible para reservas.',
+            ]);
+        }
+
+        // 2. Validate that time slot is not in the past
+        $slotDateTime = Carbon::createFromFormat(
+            'Y-m-d H:i',
+            $validated['reservation_date'] . ' ' . $validated['reservation_time']
+        );
+        if ($slotDateTime->isPast()) {
+            return response()->json([
+                'valid' => false,
+                'message' => 'No se puede reservar un horario que ya pasó.',
+            ]);
+        }
+
+        // 3. Get configuration and check capacity
+        $configs = ScheduleConfig::where('is_active', true)->get();
+        $blockedSlots = BlockedSlot::getActiveBlocksForDate($validated['reservation_date']);
+        $configCapacity = 0;
+
+        // Check regular schedule configurations
+        foreach ($configs as $config) {
+            $slots = $config->generateSlotsForDate($validated['reservation_date'], $blockedSlots);
+            foreach ($slots as $slot) {
+                if ($slot['time'] === $validated['reservation_time']) {
+                    $configCapacity = $slot['total_capacity'];
+                    break 2;
+                }
+            }
+        }
+
+        // If not found in regular schedules, check special schedules
+        if ($configCapacity === 0) {
+            $specialSchedule = SpecialSchedule::getForDate($validated['reservation_date']);
+            if ($specialSchedule) {
+                $specialSlots = $specialSchedule->generateSlots();
+                foreach ($specialSlots as $slot) {
+                    if ($slot['time'] === $validated['reservation_time']) {
+                        $configCapacity = $slot['total_capacity'];
+                        break;
+                    }
+                }
+            }
+        }
+
+        if ($configCapacity === 0) {
+            return response()->json([
+                'valid' => false,
+                'message' => 'Este horario no está disponible.',
+            ]);
+        }
+
+        // 4. Validate slot limit based on schedule capacity
+        if ($validated['slots_requested'] > $configCapacity) {
+            return response()->json([
+                'valid' => false,
+                'message' => 'No puedes reservar más de ' . $configCapacity . ' cupos para este horario.',
+            ]);
+        }
+
+        // 5. Check real-time capacity (race condition protection)
+        $availableCapacity = Reservation::getAvailableCapacity(
+            $validated['reservation_date'],
+            $validated['reservation_time'],
+            $configCapacity
+        );
+
+        if ($availableCapacity < $validated['slots_requested']) {
+            return response()->json([
+                'valid' => false,
+                'message' => 'No hay suficientes cupos disponibles. Los cupos se han agotado.',
+            ]);
+        }
+
+        // 6. Validate container numbers (format and duplicates)
+        $result = $this->validateContainerNumbers(
+            $validated['container_numbers'],
+            $validated['booking_number']
+        );
+
+        if (!$result['valid']) {
+            return response()->json([
+                'valid' => false,
+                'message' => implode(' ', $result['errors']),
+            ]);
+        }
+
+        return response()->json([
+            'valid' => true,
+            'message' => 'Todas las validaciones pasaron correctamente',
+        ]);
+    }
+
+    /**
+     * Pre-validate containers before sending to external API.
+     * Checks for duplicates in existing reservations.
+     */
+    public function validateContainers(Request $request)
     {
         $validated = $request->validate([
             'booking_number' => ['required', 'string', 'max:255'],
             'container_numbers' => ['required', 'array'],
             'container_numbers.*' => ['required', 'string', 'max:20'],
-            'transporter_name' => ['required', 'string', 'max:255'],
-            'truck_plate' => ['required', 'string', 'max:10'],
         ]);
 
-        $user = $request->user();
+        $result = $this->validateContainerNumbers(
+            $validated['container_numbers'],
+            $validated['booking_number']
+        );
 
-        // Load company relationship
-        if (!$user->relationLoaded('company')) {
-            $user->load('company');
+        if (!$result['valid']) {
+            return response()->json([
+                'valid' => false,
+                'errors' => $result['errors'],
+            ]);
         }
 
-        $companyName = $user->company ? $user->company->name : 'Sin empresa';
-        $results = [];
-        $errors = [];
-        $notes = [];
+        return response()->json([
+            'valid' => true,
+            'message' => 'Contenedores válidos',
+        ]);
+    }
 
-        try {
-            $totalContainers = count($validated['container_numbers']);
-            $apiUrl = config('services.booking_api.url');
+    /**
+     * Validate container numbers format and check for duplicates.
+     * Returns ['valid' => bool, 'errors' => array, 'clean_numbers' => array]
+     */
+    private function validateContainerNumbers(array $containerNumbers, string $bookingNumber): array
+    {
+        // Clean container numbers
+        $cleanContainerNumbers = array_map(function ($number) {
+            return strtoupper(str_replace(' ', '', $number));
+        }, $containerNumbers);
 
-            foreach ($validated['container_numbers'] as $index => $containerNumber) {
-                $cleanNumber = strtoupper(str_replace(' ', '', $containerNumber));
+        // Validate container number format
+        $formatErrors = [];
+        foreach ($cleanContainerNumbers as $index => $containerNumber) {
+            if (!Reservation::validateContainerNumber($containerNumber)) {
+                $formatErrors[] = "Contenedor #" . ($index + 1) . ": Formato inválido. Debe ser 4 letras seguidas de 7 dígitos (ej: ABCD1234567).";
+            }
+        }
 
-                $data = [
-                    'action' => 'crear_contenedor',
-                    'booking_number' => $validated['booking_number'],
-                    'container_numbers' => [$cleanNumber],
-                    'transporter_name' => $validated['transporter_name'],
-                    'truck_plate' => strtoupper($validated['truck_plate']),
-                    'trucking_company' => $companyName,
-                    'usuario_id' => $user->id,
-                ];
+        if (!empty($formatErrors)) {
+            return [
+                'valid' => false,
+                'errors' => $formatErrors,
+                'clean_numbers' => $cleanContainerNumbers,
+            ];
+        }
 
-                Log::info('Sending container to external API', [
-                    'user_id' => $user->id,
-                    'container' => $cleanNumber,
-                    'booking' => $validated['booking_number'],
-                    'api_url' => $apiUrl,
-                ]);
+        // Check for duplicates in existing reservations with same booking number
+        $existingReservations = Reservation::where('booking_number', $bookingNumber)
+            ->whereIn('status', ['active', 'confirmed', 'completed'])
+            ->get();
 
-                $response = Http::timeout(10)->post($apiUrl, $data);
+        $duplicateErrors = [];
 
-                $responseData = $response->json();
+        foreach ($existingReservations as $existingReservation) {
+            $existingContainers = is_array($existingReservation->container_numbers)
+                ? $existingReservation->container_numbers
+                : json_decode($existingReservation->container_numbers, true) ?? [];
 
-                if ($response->successful() && isset($responseData['success']) && $responseData['success']) {
-                    $results[] = [
-                        'container' => $cleanNumber,
-                        'success' => true,
-                        'data' => $responseData['data'] ?? null,
-                    ];
+            $duplicates = array_intersect($cleanContainerNumbers, $existingContainers);
 
-                    $notes[] = "✓ Contenedor {$cleanNumber}: Guardado exitosamente en la API externa";
-
-                    Log::info('Container sent to external API from frontend', [
-                        'user_id' => $user->id,
-                        'container' => $cleanNumber,
-                        'booking' => $validated['booking_number'],
-                        'response' => $responseData,
-                    ]);
-                } else {
-                    $errorMessage = $responseData['message'] ?? 'Error desconocido';
-
-                    // Check for specific error types
-                    if (strpos($errorMessage, 'ya existe') !== false || strpos($errorMessage, 'duplicado') !== false) {
-                        $errorType = 'Duplicado';
-                    } elseif (strpos($errorMessage, 'máxima') !== false || strpos($errorMessage, 'capacidad') !== false) {
-                        $errorType = 'Capacidad excedida';
-                    } elseif (strpos($errorMessage, 'formato') !== false || strpos($errorMessage, 'inválido') !== false) {
-                        $errorType = 'Formato inválido';
-                    } elseif (strpos($errorMessage, 'verificador') !== false) {
-                        $errorType = 'Dígito verificador incorrecto';
-                    } else {
-                        $errorType = 'Error';
-                    }
-
-                    $errors[] = [
-                        'container' => $cleanNumber,
-                        'message' => $errorMessage,
-                        'type' => $errorType,
-                    ];
-
-                    $notes[] = "✗ Contenedor {$cleanNumber}: {$errorType} - {$errorMessage}";
-
-                    Log::warning('External API returned error for container from frontend', [
-                        'user_id' => $user->id,
-                        'container' => $cleanNumber,
-                        'booking' => $validated['booking_number'],
-                        'error' => $errorMessage,
-                        'error_type' => $errorType,
-                    ]);
+            if (!empty($duplicates)) {
+                foreach ($duplicates as $duplicate) {
+                    $duplicateErrors[] = "El contenedor {$duplicate} ya está registrado para el Booking #{$bookingNumber}";
                 }
             }
-
-            $successCount = count($results);
-            $errorCount = count($errors);
-
-            // Build summary message
-            if ($errorCount === 0) {
-                $summaryMessage = "Todos los contenedores ({$totalContainers}) fueron guardados exitosamente en la API externa";
-            } elseif ($successCount === 0) {
-                $summaryMessage = "Ningún contenedor pudo ser guardado en la API externa ({$errorCount} error(es))";
-            } else {
-                $summaryMessage = "{$successCount} de {$totalContainers} contenedores guardados exitosamente en la API externa ({$errorCount} error(es))";
-            }
-
-            // Create structured notes in JSON format for better display
-            $structuredNotes = [
-                'timestamp' => now()->format('Y-m-d H:i:s'),
-                'booking_number' => $validated['booking_number'],
-                'total_containers' => $totalContainers,
-                'successful' => $successCount,
-                'failed' => $errorCount,
-                'api_url' => $apiUrl,
-                'results' => $results,
-                'errors' => $errors,
-                'summary' => $summaryMessage,
-            ];
-
-            $notesJson = json_encode($structuredNotes, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-
-            // Always return success with notes, even if there were errors
-            // The reservation should be created regardless of API result
-            return response()->json([
-                'success' => true,
-                'message' => $summaryMessage,
-                'results' => $results,
-                'errors' => $errors,
-                'notes' => $notesJson,
-                'has_errors' => count($errors) > 0,
-                'success_count' => $successCount,
-                'error_count' => $errorCount,
-            ]);
-        } catch (\Exception $e) {
-            $structuredErrorNotes = [
-                'timestamp' => now()->format('Y-m-d H:i:s'),
-                'booking_number' => $validated['booking_number'] ?? 'N/A',
-                'total_containers' => count($validated['container_numbers'] ?? []),
-                'successful' => 0,
-                'failed' => count($validated['container_numbers'] ?? []),
-                'api_url' => config('services.booking_api.url'),
-                'results' => [],
-                'errors' => [[
-                    'container' => 'N/A',
-                    'message' => 'Error de conexión: ' . $e->getMessage(),
-                    'type' => 'Error de Conexión',
-                ]],
-                'summary' => 'Error al conectar con la API externa: ' . $e->getMessage(),
-            ];
-
-            $notesJson = json_encode($structuredErrorNotes, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-
-            Log::error('Failed to send containers to external API from frontend', [
-                'user_id' => $user->id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al conectar con la API externa: ' . $e->getMessage(),
-                'notes' => $notesJson,
-            ], 500);
         }
+
+        if (!empty($duplicateErrors)) {
+            return [
+                'valid' => false,
+                'errors' => array_unique($duplicateErrors),
+                'clean_numbers' => $cleanContainerNumbers,
+            ];
+        }
+
+        return [
+            'valid' => true,
+            'errors' => [],
+            'clean_numbers' => $cleanContainerNumbers,
+        ];
     }
 
     /**
      * Store a newly created reservation.
+     * NOTE: Critical validations are now done in preValidate() BEFORE external API call
+     * This prevents orphaned containers in the external system
      */
     public function store(Request $request)
     {
-        // Debug: Log what we're receiving
-        Log::info('Reservation store request', [
-            'all_data' => $request->all(),
-            'has_file_info' => $request->has('file_info'),
-            'file_info_value' => $request->input('file_info'),
-        ]);
-
         $validated = $request->validate([
             'reservation_date' => ['required', 'date', 'after_or_equal:today'],
             'reservation_time' => ['required', 'date_format:H:i'],
@@ -397,6 +418,7 @@ class ReservationController extends Controller
             'truck_plate' => ['required', 'string', 'max:10'],
             'slots_requested' => ['required', 'integer', 'min:1'],
             'container_numbers' => ['required', 'array'],
+            'flexitank_code' => ['nullable', 'string', 'max:100'],
             'container_numbers.*' => ['required', 'string', 'max:20'],
             'api_notes' => ['nullable', 'string'],
             'file_info' => ['nullable', 'string'],
@@ -409,104 +431,23 @@ class ReservationController extends Controller
                 ->withInput();
         }
 
-        // Validate each container number format
-        foreach ($validated['container_numbers'] as $index => $containerNumber) {
-            $cleanNumber = strtoupper(str_replace(' ', '', $containerNumber));
-            if (!Reservation::validateContainerNumber($cleanNumber)) {
-                return back()
-                    ->withErrors(['container_numbers.' . $index => 'Formato inválido. Debe ser 4 letras seguidas de 7 dígitos (ej: ABCD1234567).'])
-                    ->withInput();
-            }
-        }
+        // Clean container numbers
+        $cleanContainerNumbers = array_map(function ($number) {
+            return strtoupper(str_replace(' ', '', $number));
+        }, $validated['container_numbers']);
 
-        return DB::transaction(function () use ($validated, $request) {
+        return DB::transaction(function () use ($validated, $request, $cleanContainerNumbers) {
             $redirectRoute = route('reservations.create', ['date' => $validated['reservation_date']]);
 
-            // Check if date is blocked
-            if (BlockedDate::isDateBlocked($validated['reservation_date'])) {
-                return redirect($redirectRoute)
-                    ->withErrors(['reservation_date' => 'Esta fecha no está disponible para reservas.'])
-                    ->withInput();
-            }
-
-            // Validate that time slot is not in the past
-            $slotDateTime = Carbon::createFromFormat('Y-m-d H:i', $validated['reservation_date'] . ' ' . $validated['reservation_time']);
-            if ($slotDateTime->isPast()) {
-                return redirect($redirectRoute)
-                    ->withErrors(['reservation_time' => 'No se puede reservar un horario que ya pasó.'])
-                    ->withInput();
-            }
-
-            // Get configuration and check capacity first
-            // Check both regular schedules and special schedules
-            $configs = ScheduleConfig::where('is_active', true)->get();
-            $configCapacity = 0;
-
-            // First, check regular schedule configurations
-            foreach ($configs as $config) {
-                $slots = $config->generateSlotsForDate($validated['reservation_date']);
-                foreach ($slots as $slot) {
-                    if ($slot['time'] === $validated['reservation_time']) {
-                        $configCapacity = $slot['total_capacity'];
-                        break 2;
-                    }
-                }
-            }
-
-            // If not found in regular schedules, check special schedules
-            if ($configCapacity === 0) {
-                $specialSchedule = SpecialSchedule::getForDate($validated['reservation_date']);
-                if ($specialSchedule) {
-                    $specialSlots = $specialSchedule->generateSlots();
-                    foreach ($specialSlots as $slot) {
-                        if ($slot['time'] === $validated['reservation_time']) {
-                            $configCapacity = $slot['total_capacity'];
-                            break;
-                        }
-                    }
-                }
-            }
-
-            if ($configCapacity === 0) {
-                return redirect($redirectRoute)
-                    ->withErrors(['reservation_time' => 'Este horario no está disponible.'])
-                    ->withInput();
-            }
-
-            // Validate slot limit based on schedule capacity
-            $slotsRequested = $validated['slots_requested'];
-
-            // If slots requested exceeds the capacity of the selected time slot
-            if ($slotsRequested > $configCapacity) {
-                return redirect($redirectRoute)
-                    ->withErrors(['slots_requested' => 'No puedes reservar más de ' . $configCapacity . ' cupos para este horario.'])
-                    ->withInput();
-            }
-
-            // Re-check capacity in real-time (race condition protection)
-            $availableCapacity = Reservation::getAvailableCapacity(
-                $validated['reservation_date'],
-                $validated['reservation_time'],
-                $configCapacity
-            );
-
-            if ($availableCapacity < $slotsRequested) {
-                return redirect()->route('reservations.create', ['date' => $validated['reservation_date']])
-                    ->withErrors(['slots_requested' => 'No hay suficientes cupos disponibles en este horario. Los cupos se han agotado.'])
-                    ->withInput();
-            }
-
-            // Clean and format container numbers
-            $cleanContainerNumbers = array_map(function ($number) {
-                return strtoupper(str_replace(' ', '', $number));
-            }, $validated['container_numbers']);
+            // NOTE: Most validations are now done in preValidate() before external API call
+            // We keep minimal safety checks here as a final guard
 
             // Ensure time is in HH:MM:SS format for MySQL TIME field
             $reservationTime = strlen($validated['reservation_time']) === 5
                 ? $validated['reservation_time'] . ':00'
                 : $validated['reservation_time'];
 
-            // Create reservation
+            // Create reservation (container numbers already cleaned)
             $reservation = Reservation::create([
                 'user_id' => $request->user()->id,
                 'reservation_date' => $validated['reservation_date'],
@@ -514,16 +455,13 @@ class ReservationController extends Controller
                 'booking_number' => $validated['booking_number'],
                 'transportista_name' => $validated['transporter_name'],
                 'truck_plate' => strtoupper($validated['truck_plate']),
-                'slots_reserved' => $slotsRequested,
+                'slots_reserved' => $validated['slots_requested'],
                 'container_numbers' => $cleanContainerNumbers,
+                'flexitank_code' => $validated['flexitank_code'] ?? null,
                 'api_notes' => $validated['api_notes'] ?? null,
                 'file_info' => $validated['file_info'] ?? null,
                 'status' => 'active',
             ]);
-
-            // NOTE: Containers are now sent from frontend via sendContainersToApi() before reservation creation
-            // This ensures immediate feedback to the user if there are any issues with the external API
-            // No need to send containers here again
 
             // Return success with reservation data to show in modal
             return back()->with([

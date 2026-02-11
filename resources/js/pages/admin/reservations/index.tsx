@@ -1,3 +1,4 @@
+import { CompleteReservationDialog } from '@/components/reservations/CompleteReservationDialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -76,6 +77,7 @@ export default function AdminReservationsIndex({
     );
     const [perPage, setPerPage] = useState(filters.per_page || '20');
     const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+    const [completeDialogOpen, setCompleteDialogOpen] = useState(false);
     const [selectedReservation, setSelectedReservation] =
         useState<Reservation | null>(null);
     const [fileInfoDialogOpen, setFileInfoDialogOpen] = useState(false);
@@ -298,6 +300,7 @@ export default function AdminReservationsIndex({
                                         <TableHead>Booking</TableHead>
                                         <TableHead>Patente</TableHead>
                                         <TableHead>Contenedores</TableHead>
+                                        <TableHead>Flexitank</TableHead>
                                         <TableHead>Estado</TableHead>
                                         <TableHead>Creada</TableHead>
                                         <TableHead className="text-right">
@@ -309,7 +312,7 @@ export default function AdminReservationsIndex({
                                     {reservations.data.length === 0 ? (
                                         <TableRow>
                                             <TableCell
-                                                colSpan={9}
+                                                colSpan={10}
                                                 className="h-24 text-center"
                                             >
                                                 No se encontraron reservas con
@@ -423,6 +426,14 @@ export default function AdminReservationsIndex({
                                                     )}
                                                 </TableCell>
 
+                                                {/* Flexitank */}
+                                                <TableCell>
+                                                    <span className="font-mono text-xs">
+                                                        {reservation.flexitank_code ||
+                                                            '-'}
+                                                    </span>
+                                                </TableCell>
+
                                                 {/* Estado */}
                                                 <TableCell>
                                                     <Badge
@@ -511,11 +522,14 @@ export default function AdminReservationsIndex({
                                                                 'active' && (
                                                                 <>
                                                                     <DropdownMenuItem
-                                                                        onSelect={() =>
-                                                                            router.visit(
-                                                                                `/admin/reservations/${reservation.id}/show`,
-                                                                            )
-                                                                        }
+                                                                        onSelect={() => {
+                                                                            setSelectedReservation(
+                                                                                reservation,
+                                                                            );
+                                                                            setCompleteDialogOpen(
+                                                                                true,
+                                                                            );
+                                                                        }}
                                                                     >
                                                                         <CheckCircle className="mr-2 h-4 w-4 text-green-600" />
                                                                         Marcar
@@ -765,6 +779,13 @@ export default function AdminReservationsIndex({
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            {/* Complete Reservation Dialog */}
+            <CompleteReservationDialog
+                reservation={selectedReservation}
+                open={completeDialogOpen}
+                onOpenChange={setCompleteDialogOpen}
+            />
         </AppLayout>
     );
 }

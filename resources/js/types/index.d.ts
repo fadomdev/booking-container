@@ -122,6 +122,7 @@ export interface Reservation {
     truck_plate: string;
     slots_reserved: number;
     container_numbers?: string[];
+    flexitank_code?: string;
     api_notes?: string;
     file_info?: string;
     status: 'active' | 'cancelled' | 'completed' | 'expired';
