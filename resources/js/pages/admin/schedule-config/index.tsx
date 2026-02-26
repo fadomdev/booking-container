@@ -7,6 +7,7 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import { useCanModify } from '@/hooks/use-can-modify';
 import AppLayout from '@/layouts/app-layout';
 import { ScheduleConfig } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
@@ -17,6 +18,8 @@ interface Props {
 }
 
 export default function ScheduleConfigIndex({ configs }: Props) {
+    const canModify = useCanModify();
+
     const handleDelete = (id: number) => {
         if (confirm('¿Estás seguro de eliminar esta configuración?')) {
             router.delete(`/admin/schedule-config/${id}`);
@@ -64,12 +67,14 @@ export default function ScheduleConfigIndex({ configs }: Props) {
                         </p>
                     </div>
                     <div className="flex gap-2">
-                        <Button asChild>
-                            <Link href="/admin/schedule-config/create">
-                                <Plus className="mr-2 h-4 w-4" />
-                                Nueva Configuración
-                            </Link>
-                        </Button>
+                        {canModify && (
+                            <Button asChild>
+                                <Link href="/admin/schedule-config/create">
+                                    <Plus className="mr-2 h-4 w-4" />
+                                    Nueva Configuración
+                                </Link>
+                            </Button>
+                        )}
                     </div>
                 </div>
 
@@ -91,14 +96,16 @@ export default function ScheduleConfigIndex({ configs }: Props) {
                                                     Sin configuración
                                                 </CardDescription>
                                             </div>
-                                            <Button asChild size="sm">
-                                                <Link
-                                                    href={`/admin/schedule-config/create?day=${dayOfWeek}`}
-                                                >
-                                                    <Plus className="mr-2 h-4 w-4" />
-                                                    Configurar
-                                                </Link>
-                                            </Button>
+                                            {canModify && (
+                                                <Button asChild size="sm">
+                                                    <Link
+                                                        href={`/admin/schedule-config/create?day=${dayOfWeek}`}
+                                                    >
+                                                        <Plus className="mr-2 h-4 w-4" />
+                                                        Configurar
+                                                    </Link>
+                                                </Button>
+                                            )}
                                         </div>
                                     </CardHeader>
                                 </Card>
@@ -169,47 +176,51 @@ export default function ScheduleConfigIndex({ configs }: Props) {
                                     </div>
 
                                     <div className="flex gap-2 border-t pt-4">
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() =>
-                                                toggleStatus(config.id)
-                                            }
-                                        >
-                                            {config.is_active ? (
-                                                <>
-                                                    <EyeOff className="mr-2 h-4 w-4" />
-                                                    Desactivar
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <Eye className="mr-2 h-4 w-4" />
-                                                    Activar
-                                                </>
-                                            )}
-                                        </Button>
-                                        <Button
-                                            asChild
-                                            variant="outline"
-                                            size="sm"
-                                        >
-                                            <Link
-                                                href={`/admin/schedule-config/${config.id}/edit`}
-                                            >
-                                                <Pencil className="mr-2 h-4 w-4" />
-                                                Editar
-                                            </Link>
-                                        </Button>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() =>
-                                                handleDelete(config.id)
-                                            }
-                                        >
-                                            <Trash2 className="mr-2 h-4 w-4 text-destructive" />
-                                            Eliminar
-                                        </Button>
+                                        {canModify && (
+                                            <>
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() =>
+                                                        toggleStatus(config.id)
+                                                    }
+                                                >
+                                                    {config.is_active ? (
+                                                        <>
+                                                            <EyeOff className="mr-2 h-4 w-4" />
+                                                            Desactivar
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <Eye className="mr-2 h-4 w-4" />
+                                                            Activar
+                                                        </>
+                                                    )}
+                                                </Button>
+                                                <Button
+                                                    asChild
+                                                    variant="outline"
+                                                    size="sm"
+                                                >
+                                                    <Link
+                                                        href={`/admin/schedule-config/${config.id}/edit`}
+                                                    >
+                                                        <Pencil className="mr-2 h-4 w-4" />
+                                                        Editar
+                                                    </Link>
+                                                </Button>
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() =>
+                                                        handleDelete(config.id)
+                                                    }
+                                                >
+                                                    <Trash2 className="mr-2 h-4 w-4 text-destructive" />
+                                                    Eliminar
+                                                </Button>
+                                            </>
+                                        )}
                                     </div>
                                 </CardContent>
                             </Card>

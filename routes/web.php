@@ -92,66 +92,86 @@ Route::middleware(['auth', 'verified', App\Http\Middleware\EnsureUserIsAdmin::cl
             return Inertia::render('admin/dashboard');
         })->name('dashboard');
 
-        // User management
-        Route::resource('users', UserController::class);
+        // ---- READ-ONLY routes (admin + consulta) ----
 
-        // Company management
-        Route::resource('companies', CompanyController::class);
-        Route::post('/companies/{company}/toggle-status', [CompanyController::class, 'toggleStatus'])->name('companies.toggle-status');
+        // User management - read
+        Route::get('/users', [UserController::class, 'index'])->name('users.index');
+        Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
+        Route::get('/users/{user}', [UserController::class, 'show'])->name('users.show');
+        Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
 
-        // Schedule configuration management
-        Route::prefix('schedule-config')->name('schedule-config.')->group(function () {
-            Route::get('/', [ScheduleConfigController::class, 'index'])->name('index');
-            Route::get('/create', [ScheduleConfigController::class, 'create'])->name('create');
-            Route::post('/', [ScheduleConfigController::class, 'store'])->name('store');
-            Route::get('/{scheduleConfig}/edit', [ScheduleConfigController::class, 'edit'])->name('edit');
-            Route::put('/{scheduleConfig}', [ScheduleConfigController::class, 'update'])->name('update');
-            Route::delete('/{scheduleConfig}', [ScheduleConfigController::class, 'destroy'])->name('destroy');
-            Route::post('/{scheduleConfig}/toggle-status', [ScheduleConfigController::class, 'toggleStatus'])->name('toggle-status');
-        });
+        // Company management - read
+        Route::get('/companies', [CompanyController::class, 'index'])->name('companies.index');
+        Route::get('/companies/create', [CompanyController::class, 'create'])->name('companies.create');
+        Route::get('/companies/{company}', [CompanyController::class, 'show'])->name('companies.show');
+        Route::get('/companies/{company}/edit', [CompanyController::class, 'edit'])->name('companies.edit');
 
-        // Blocked dates management
-        Route::prefix('blocked-dates')->name('blocked-dates.')->group(function () {
-            Route::get('/', [BlockedDateController::class, 'index'])->name('index');
-            Route::get('/create', [BlockedDateController::class, 'create'])->name('create');
-            Route::post('/', [BlockedDateController::class, 'store'])->name('store');
-            Route::get('/{blockedDate}/edit', [BlockedDateController::class, 'edit'])->name('edit');
-            Route::put('/{blockedDate}', [BlockedDateController::class, 'update'])->name('update');
-            Route::delete('/{blockedDate}', [BlockedDateController::class, 'destroy'])->name('destroy');
-            Route::post('/{blockedDate}/toggle-status', [BlockedDateController::class, 'toggleStatus'])->name('toggle-status');
-        });
+        // Schedule configuration - read
+        Route::get('/schedule-config', [ScheduleConfigController::class, 'index'])->name('schedule-config.index');
+        Route::get('/schedule-config/create', [ScheduleConfigController::class, 'create'])->name('schedule-config.create');
+        Route::get('/schedule-config/{scheduleConfig}/edit', [ScheduleConfigController::class, 'edit'])->name('schedule-config.edit');
 
-        // Special schedules management
-        Route::prefix('special-schedules')->name('special-schedules.')->group(function () {
-            Route::get('/', [SpecialScheduleController::class, 'index'])->name('index');
-            Route::get('/create', [SpecialScheduleController::class, 'create'])->name('create');
-            Route::post('/', [SpecialScheduleController::class, 'store'])->name('store');
-            Route::get('/{specialSchedule}/edit', [SpecialScheduleController::class, 'edit'])->name('edit');
-            Route::put('/{specialSchedule}', [SpecialScheduleController::class, 'update'])->name('update');
-            Route::delete('/{specialSchedule}', [SpecialScheduleController::class, 'destroy'])->name('destroy');
-            Route::post('/{specialSchedule}/toggle-status', [SpecialScheduleController::class, 'toggleStatus'])->name('toggle-status');
-        });
+        // Blocked dates - read
+        Route::get('/blocked-dates', [BlockedDateController::class, 'index'])->name('blocked-dates.index');
+        Route::get('/blocked-dates/create', [BlockedDateController::class, 'create'])->name('blocked-dates.create');
+        Route::get('/blocked-dates/{blockedDate}/edit', [BlockedDateController::class, 'edit'])->name('blocked-dates.edit');
 
-        // Blocked slots management
-        Route::prefix('blocked-slots')->name('blocked-slots.')->group(function () {
-            Route::get('/', [BlockedSlotController::class, 'index'])->name('index');
-            Route::get('/create', [BlockedSlotController::class, 'create'])->name('create');
-            Route::post('/', [BlockedSlotController::class, 'store'])->name('store');
-            Route::get('/{blockedSlot}/edit', [BlockedSlotController::class, 'edit'])->name('edit');
-            Route::put('/{blockedSlot}', [BlockedSlotController::class, 'update'])->name('update');
-            Route::delete('/{blockedSlot}', [BlockedSlotController::class, 'destroy'])->name('destroy');
-            Route::post('/{blockedSlot}/toggle-active', [BlockedSlotController::class, 'toggleActive'])->name('toggle-active');
-        });
+        // Special schedules - read
+        Route::get('/special-schedules', [SpecialScheduleController::class, 'index'])->name('special-schedules.index');
+        Route::get('/special-schedules/create', [SpecialScheduleController::class, 'create'])->name('special-schedules.create');
+        Route::get('/special-schedules/{specialSchedule}/edit', [SpecialScheduleController::class, 'edit'])->name('special-schedules.edit');
 
-        // Reservation management
+        // Blocked slots - read
+        Route::get('/blocked-slots', [BlockedSlotController::class, 'index'])->name('blocked-slots.index');
+        Route::get('/blocked-slots/create', [BlockedSlotController::class, 'create'])->name('blocked-slots.create');
+        Route::get('/blocked-slots/{blockedSlot}/edit', [BlockedSlotController::class, 'edit'])->name('blocked-slots.edit');
+
+        // Reservation management - read
         Route::get('/reservations', [AdminReservationController::class, 'index'])->name('reservations.index');
+        Route::get('/reservations/search', [ReservationStatusController::class, 'index'])->name('reservations.search');
+        Route::get('/reservations/{reservation}/show', [ReservationStatusController::class, 'show'])->name('reservations.show');
 
-        // Reservation status management (marcar como completadas)
-        Route::prefix('reservations')->name('reservations.')->group(function () {
-            Route::get('/search', [ReservationStatusController::class, 'index'])->name('search');
-            Route::post('/search', [ReservationStatusController::class, 'search']);
-            Route::get('/{reservation}/show', [ReservationStatusController::class, 'show'])->name('show');
-            Route::post('/{reservation}/complete', [ReservationStatusController::class, 'markAsCompleted'])->name('complete');
+        // ---- WRITE routes (admin only) ----
+        Route::middleware([App\Http\Middleware\EnsureUserCanModify::class])->group(function () {
+
+            // User management - write
+            Route::post('/users', [UserController::class, 'store'])->name('users.store');
+            Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
+            Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+
+            // Company management - write
+            Route::post('/companies', [CompanyController::class, 'store'])->name('companies.store');
+            Route::put('/companies/{company}', [CompanyController::class, 'update'])->name('companies.update');
+            Route::delete('/companies/{company}', [CompanyController::class, 'destroy'])->name('companies.destroy');
+            Route::post('/companies/{company}/toggle-status', [CompanyController::class, 'toggleStatus'])->name('companies.toggle-status');
+
+            // Schedule configuration - write
+            Route::post('/schedule-config', [ScheduleConfigController::class, 'store'])->name('schedule-config.store');
+            Route::put('/schedule-config/{scheduleConfig}', [ScheduleConfigController::class, 'update'])->name('schedule-config.update');
+            Route::delete('/schedule-config/{scheduleConfig}', [ScheduleConfigController::class, 'destroy'])->name('schedule-config.destroy');
+            Route::post('/schedule-config/{scheduleConfig}/toggle-status', [ScheduleConfigController::class, 'toggleStatus'])->name('schedule-config.toggle-status');
+
+            // Blocked dates - write
+            Route::post('/blocked-dates', [BlockedDateController::class, 'store'])->name('blocked-dates.store');
+            Route::put('/blocked-dates/{blockedDate}', [BlockedDateController::class, 'update'])->name('blocked-dates.update');
+            Route::delete('/blocked-dates/{blockedDate}', [BlockedDateController::class, 'destroy'])->name('blocked-dates.destroy');
+            Route::post('/blocked-dates/{blockedDate}/toggle-status', [BlockedDateController::class, 'toggleStatus'])->name('blocked-dates.toggle-status');
+
+            // Special schedules - write
+            Route::post('/special-schedules', [SpecialScheduleController::class, 'store'])->name('special-schedules.store');
+            Route::put('/special-schedules/{specialSchedule}', [SpecialScheduleController::class, 'update'])->name('special-schedules.update');
+            Route::delete('/special-schedules/{specialSchedule}', [SpecialScheduleController::class, 'destroy'])->name('special-schedules.destroy');
+            Route::post('/special-schedules/{specialSchedule}/toggle-status', [SpecialScheduleController::class, 'toggleStatus'])->name('special-schedules.toggle-status');
+
+            // Blocked slots - write
+            Route::post('/blocked-slots', [BlockedSlotController::class, 'store'])->name('blocked-slots.store');
+            Route::put('/blocked-slots/{blockedSlot}', [BlockedSlotController::class, 'update'])->name('blocked-slots.update');
+            Route::delete('/blocked-slots/{blockedSlot}', [BlockedSlotController::class, 'destroy'])->name('blocked-slots.destroy');
+            Route::post('/blocked-slots/{blockedSlot}/toggle-active', [BlockedSlotController::class, 'toggleActive'])->name('blocked-slots.toggle-active');
+
+            // Reservation status - write
+            Route::post('/reservations/search', [ReservationStatusController::class, 'search'])->name('reservations.search.post');
+            Route::post('/reservations/{reservation}/complete', [ReservationStatusController::class, 'markAsCompleted'])->name('reservations.complete');
         });
     });
 

@@ -34,6 +34,7 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
+import { useCanModify } from '@/hooks/use-can-modify';
 import AppLayout from '@/layouts/app-layout';
 import { PaginatedData, Reservation } from '@/types';
 import { Head, router, useForm } from '@inertiajs/react';
@@ -67,6 +68,7 @@ export default function AdminReservationsIndex({
     reservations,
     filters = {},
 }: Props) {
+    const canModify = useCanModify();
     const [filterDate, setFilterDate] = useState(filters.date || '');
     const [filterStatus, setFilterStatus] = useState(
         filters.status || 'active',
@@ -518,38 +520,39 @@ export default function AdminReservationsIndex({
                                                                     Info
                                                                 </DropdownMenuItem>
                                                             )}
-                                                            {reservation.status ===
-                                                                'active' && (
-                                                                <>
-                                                                    <DropdownMenuItem
-                                                                        onSelect={() => {
-                                                                            setSelectedReservation(
-                                                                                reservation,
-                                                                            );
-                                                                            setCompleteDialogOpen(
-                                                                                true,
-                                                                            );
-                                                                        }}
-                                                                    >
-                                                                        <CheckCircle className="mr-2 h-4 w-4 text-green-600" />
-                                                                        Marcar
-                                                                        como
-                                                                        completada
-                                                                    </DropdownMenuItem>
-                                                                    <DropdownMenuItem
-                                                                        onSelect={() =>
-                                                                            openCancelDialog(
-                                                                                reservation,
-                                                                            )
-                                                                        }
-                                                                        className="text-destructive"
-                                                                    >
-                                                                        <XCircle className="mr-2 h-4 w-4" />
-                                                                        Anular
-                                                                        reserva
-                                                                    </DropdownMenuItem>
-                                                                </>
-                                                            )}
+                                                            {canModify &&
+                                                                reservation.status ===
+                                                                    'active' && (
+                                                                    <>
+                                                                        <DropdownMenuItem
+                                                                            onSelect={() => {
+                                                                                setSelectedReservation(
+                                                                                    reservation,
+                                                                                );
+                                                                                setCompleteDialogOpen(
+                                                                                    true,
+                                                                                );
+                                                                            }}
+                                                                        >
+                                                                            <CheckCircle className="mr-2 h-4 w-4 text-green-600" />
+                                                                            Marcar
+                                                                            como
+                                                                            completada
+                                                                        </DropdownMenuItem>
+                                                                        <DropdownMenuItem
+                                                                            onSelect={() =>
+                                                                                openCancelDialog(
+                                                                                    reservation,
+                                                                                )
+                                                                            }
+                                                                            className="text-destructive"
+                                                                        >
+                                                                            <XCircle className="mr-2 h-4 w-4" />
+                                                                            Anular
+                                                                            reserva
+                                                                        </DropdownMenuItem>
+                                                                    </>
+                                                                )}
                                                         </DropdownMenuContent>
                                                     </DropdownMenu>
                                                 </TableCell>

@@ -25,7 +25,9 @@ interface DashboardProps {
 
 export default function Dashboard({ activeReservationsCount }: DashboardProps) {
     const { auth } = usePage<SharedData>().props;
-    const isAdmin = auth.user.role === 'admin';
+    const _isAdmin = auth.user.role === 'admin';
+    const _hasAdminAccess =
+        auth.user.role === 'admin' || auth.user.role === 'consulta';
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>

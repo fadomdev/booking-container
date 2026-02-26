@@ -145,7 +145,10 @@ export default function EditUser({ user, companies }: Props) {
                                     onValueChange={(value) =>
                                         setData(
                                             'role',
-                                            value as 'admin' | 'transportista',
+                                            value as
+                                                | 'admin'
+                                                | 'transportista'
+                                                | 'consulta',
                                         )
                                     }
                                 >
@@ -158,6 +161,9 @@ export default function EditUser({ user, companies }: Props) {
                                         </SelectItem>
                                         <SelectItem value="admin">
                                             Administrador
+                                        </SelectItem>
+                                        <SelectItem value="consulta">
+                                            Consulta
                                         </SelectItem>
                                     </SelectContent>
                                 </Select>

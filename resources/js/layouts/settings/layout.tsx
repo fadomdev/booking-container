@@ -36,12 +36,14 @@ const sidebarNavItems: NavItem[] = [
 export default function SettingsLayout({ children }: PropsWithChildren) {
     const { auth } = usePage<SharedData>().props;
     const isAdmin = auth.user.role === 'admin';
+    const hasAdminAccess =
+        auth.user.role === 'admin' || auth.user.role === 'consulta';
 
     // Filter navigation items based on user role
     const navItems = sidebarNavItems.filter((item) => {
-        // Show Two-Factor Auth only to admins
+        // Show Two-Factor Auth only to admins and consulta users
         if (item.title === 'Autenticación 2FA') {
-            return isAdmin;
+            return hasAdminAccess;
         }
         return true;
     });

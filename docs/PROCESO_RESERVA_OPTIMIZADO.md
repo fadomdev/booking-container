@@ -204,7 +204,7 @@ return DB::transaction(function () use ($validated, $request) {
 
 1. ✅ **Reducir pasos:** De 4+1 a 3 pasos
 2. ✅ **Eliminar validaciones redundantes**
-3. ✅ **Eliminar race conditions en capacidad de slots** 
+3. ✅ **Eliminar race conditions en capacidad de slots**
 4. ✅ **Mejor manejo de APIs externas** (async/queue)
 5. ✅ **Mejorar experiencia de usuario**
 6. ✅ **Reducir tiempo de procesamiento**
@@ -216,16 +216,19 @@ return DB::transaction(function () use ($validated, $request) {
 > **IMPORTANTE:** El race condition NO está relacionado con la validación del booking.
 
 **❌ NO es un problema:**
+
 - Validar si el número de booking existe en la API externa
 - Múltiples usuarios validando bookings diferentes simultáneamente
 - La API externa validando existencia de bookings
 
 **✅ SÍ es el problema (Race Condition):**
+
 - **Capacidad de slots:** Cuando múltiples usuarios intentan reservar los últimos cupos disponibles en el mismo horario al mismo tiempo
 - **Operación Check-Then-Act no atómica:** Se verifica capacidad y se crea reserva en dos pasos separados
 - **Sin lock de base de datos:** No hay garantía de exclusividad durante la operación
 
 **Ejemplo real:**
+
 ```
 Horario 10:00 tiene 1 cupo disponible
 
@@ -238,6 +241,7 @@ Resultado: 2 reservas para 1 cupo = OVERBOOKING ❌
 ```
 
 **Solución:**
+
 ```php
 // Lock pessimista garantiza atomicidad
 DB::transaction(function() {
@@ -246,12 +250,12 @@ DB::transaction(function() {
         ->where('reservation_time', $time)
         ->lockForUpdate() // Lock exclusivo durante la transacción
         ->sum('slots_reserved');
-    
+
     // Ahora ningún otro usuario puede consultar hasta que termine esta transacción
     if ($totalCapacity - $reservedSlots < $slotsRequested) {
         throw new InsufficientCapacityException();
     }
-    
+
     Reservation::create([...]); // Garantizado sin overbooking
 });
 ```
@@ -775,14 +779,14 @@ const validateContainerFormat = (container: string): boolean => {
 
 ### Experiencia de Usuario
 
-| Métrica                           | Actual       | Optimizado      | Mejora   |
-| --------------------------------- | ------------ | --------------- | -------- |
-| Pasos wizard                      | 4            | 3               | -25%     |
-| Clicks totales                    | ~12          | ~8              | -33%     |
-| Tiempo promedio                   | 180s         | 90s             | -50%     |
-| Tasa abandono                     | ~30%         | ~15%            | **-50%** |
+| Métrica                           | Actual        | Optimizado      | Mejora    |
+| --------------------------------- | ------------- | --------------- | --------- |
+| Pasos wizard                      | 4             | 3               | -25%      |
+| Clicks totales                    | ~12           | ~8              | -33%      |
+| Tiempo promedio                   | 180s          | 90s             | -50%      |
+| Tasa abandono                     | ~30%          | ~15%            | **-50%**  |
 | Race conditions (capacidad slots) | Posibles (5%) | Eliminadas (0%) | **-100%** |
-| Errores de overbooking            | Ocasionales  | Eliminados      | **-100%** |
+| Errores de overbooking            | Ocasionales   | Eliminados      | **-100%** |
 
 ---
 

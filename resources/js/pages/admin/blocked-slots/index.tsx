@@ -17,6 +17,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import { useCanModify } from '@/hooks/use-can-modify';
 import AppLayout from '@/layouts/app-layout';
 import { BlockedSlot, PaginatedData } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
@@ -28,6 +29,7 @@ interface Props {
 }
 
 export default function BlockedSlotsIndex({ blockedSlots }: Props) {
+    const canModify = useCanModify();
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [selectedSlot, setSelectedSlot] = useState<BlockedSlot | null>(null);
 
@@ -67,12 +69,14 @@ export default function BlockedSlotsIndex({ blockedSlots }: Props) {
                         </p>
                     </div>
                     <div className="flex gap-2">
-                        <Button asChild>
-                            <Link href="/admin/blocked-slots/create">
-                                <Plus className="mr-2 h-4 w-4" />
-                                Nuevo Bloqueo
-                            </Link>
-                        </Button>
+                        {canModify && (
+                            <Button asChild>
+                                <Link href="/admin/blocked-slots/create">
+                                    <Plus className="mr-2 h-4 w-4" />
+                                    Nuevo Bloqueo
+                                </Link>
+                            </Button>
+                        )}
                     </div>
                 </div>
 
@@ -90,9 +94,11 @@ export default function BlockedSlotsIndex({ blockedSlots }: Props) {
                                         <TableHead>Motivo</TableHead>
                                         <TableHead>Tipo</TableHead>
                                         <TableHead>Estado</TableHead>
-                                        <TableHead className="text-right">
-                                            Acciones
-                                        </TableHead>
+                                        {canModify && (
+                                            <TableHead className="text-right">
+                                                Acciones
+                                            </TableHead>
+                                        )}
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -177,56 +183,58 @@ export default function BlockedSlotsIndex({ blockedSlots }: Props) {
                                                 </TableCell>
 
                                                 {/* Acciones */}
-                                                <TableCell className="text-right">
-                                                    <div className="flex justify-end gap-1">
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            onClick={() =>
-                                                                handleToggleActive(
-                                                                    slot,
-                                                                )
-                                                            }
-                                                            title={
-                                                                slot.is_active
-                                                                    ? 'Desactivar'
-                                                                    : 'Activar'
-                                                            }
-                                                        >
-                                                            <Power
-                                                                className={`h-4 w-4 ${
+                                                {canModify && (
+                                                    <TableCell className="text-right">
+                                                        <div className="flex justify-end gap-1">
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                onClick={() =>
+                                                                    handleToggleActive(
+                                                                        slot,
+                                                                    )
+                                                                }
+                                                                title={
                                                                     slot.is_active
-                                                                        ? 'text-green-600'
-                                                                        : 'text-gray-400'
-                                                                }`}
-                                                            />
-                                                        </Button>
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            asChild
-                                                            title="Editar"
-                                                        >
-                                                            <Link
-                                                                href={`/admin/blocked-slots/${slot.id}/edit`}
+                                                                        ? 'Desactivar'
+                                                                        : 'Activar'
+                                                                }
                                                             >
-                                                                <Edit className="h-4 w-4" />
-                                                            </Link>
-                                                        </Button>
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            onClick={() =>
-                                                                openDeleteDialog(
-                                                                    slot,
-                                                                )
-                                                            }
-                                                            title="Eliminar"
-                                                        >
-                                                            <Trash2 className="h-4 w-4 text-destructive" />
-                                                        </Button>
-                                                    </div>
-                                                </TableCell>
+                                                                <Power
+                                                                    className={`h-4 w-4 ${
+                                                                        slot.is_active
+                                                                            ? 'text-green-600'
+                                                                            : 'text-gray-400'
+                                                                    }`}
+                                                                />
+                                                            </Button>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                asChild
+                                                                title="Editar"
+                                                            >
+                                                                <Link
+                                                                    href={`/admin/blocked-slots/${slot.id}/edit`}
+                                                                >
+                                                                    <Edit className="h-4 w-4" />
+                                                                </Link>
+                                                            </Button>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                onClick={() =>
+                                                                    openDeleteDialog(
+                                                                        slot,
+                                                                    )
+                                                                }
+                                                                title="Eliminar"
+                                                            >
+                                                                <Trash2 className="h-4 w-4 text-destructive" />
+                                                            </Button>
+                                                        </div>
+                                                    </TableCell>
+                                                )}
                                             </TableRow>
                                         ))
                                     )}

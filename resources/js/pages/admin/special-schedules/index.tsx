@@ -16,6 +16,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import { useCanModify } from '@/hooks/use-can-modify';
 import AppLayout from '@/layouts/app-layout';
 import { Head, Link, router } from '@inertiajs/react';
 import { format, parseISO } from 'date-fns';
@@ -48,6 +49,7 @@ interface Props {
 }
 
 export default function Index({ schedules }: Props) {
+    const canModify = useCanModify();
     const [deleteDialog, setDeleteDialog] = useState<{
         open: boolean;
         schedule: SpecialSchedule | null;
@@ -86,15 +88,17 @@ export default function Index({ schedules }: Props) {
                             específicas
                         </p>
                     </div>
-                    <Button
-                        asChild
-                        className="bg-[#003153] hover:bg-[#003153]/90"
-                    >
-                        <Link href="/admin/special-schedules/create">
-                            <CalendarPlus className="mr-2 h-4 w-4" />
-                            Crear Horario Especial
-                        </Link>
-                    </Button>
+                    {canModify && (
+                        <Button
+                            asChild
+                            className="bg-[#003153] hover:bg-[#003153]/90"
+                        >
+                            <Link href="/admin/special-schedules/create">
+                                <CalendarPlus className="mr-2 h-4 w-4" />
+                                Crear Horario Especial
+                            </Link>
+                        </Button>
+                    )}
                 </div>
 
                 {/* Table */}
@@ -109,9 +113,11 @@ export default function Index({ schedules }: Props) {
                                 <TableHead>Acceso</TableHead>
                                 <TableHead>Usuarios</TableHead>
                                 <TableHead>Estado</TableHead>
-                                <TableHead className="text-right">
-                                    Acciones
-                                </TableHead>
+                                {canModify && (
+                                    <TableHead className="text-right">
+                                        Acciones
+                                    </TableHead>
+                                )}
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -194,30 +200,34 @@ export default function Index({ schedules }: Props) {
                                                 </Badge>
                                             )}
                                         </TableCell>
-                                        <TableCell className="text-right">
-                                            <div className="flex justify-end gap-2">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    asChild
-                                                >
-                                                    <Link
-                                                        href={`/admin/special-schedules/${schedule.id}/edit`}
+                                        {canModify && (
+                                            <TableCell className="text-right">
+                                                <div className="flex justify-end gap-2">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        asChild
                                                     >
-                                                        <Pencil className="h-4 w-4" />
-                                                    </Link>
-                                                </Button>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={() =>
-                                                        handleDelete(schedule)
-                                                    }
-                                                >
-                                                    <Trash2 className="h-4 w-4 text-destructive" />
-                                                </Button>
-                                            </div>
-                                        </TableCell>
+                                                        <Link
+                                                            href={`/admin/special-schedules/${schedule.id}/edit`}
+                                                        >
+                                                            <Pencil className="h-4 w-4" />
+                                                        </Link>
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() =>
+                                                            handleDelete(
+                                                                schedule,
+                                                            )
+                                                        }
+                                                    >
+                                                        <Trash2 className="h-4 w-4 text-destructive" />
+                                                    </Button>
+                                                </div>
+                                            </TableCell>
+                                        )}
                                     </TableRow>
                                 ))
                             )}

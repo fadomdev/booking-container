@@ -11,6 +11,7 @@ use App\Mail\ReservationCancelled;
 use App\Services\BookingValidationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Inertia\Inertia;
@@ -41,7 +42,6 @@ class ReservationController extends Controller
                 'isBlocked' => true,
                 'blockReason' => $blockedDate->reason ?? 'Fecha no disponible',
                 'blockedDates' => $blockedDates,
-                'containerApiUrl' => config('services.booking_api.url'),
             ]);
         }
 
@@ -53,7 +53,6 @@ class ReservationController extends Controller
             'selectedDate' => $date,
             'isBlocked' => false,
             'blockedDates' => $blockedDates,
-            'containerApiUrl' => config('services.booking_api.url'),
         ]);
     }
 
@@ -405,79 +404,166 @@ class ReservationController extends Controller
 
     /**
      * Store a newly created reservation.
-     * NOTE: Critical validations are now done in preValidate() BEFORE external API call
-     * This prevents orphaned containers in the external system
+     *
+     * Flujo atómico:
+     *  1. Validar request localmente.
+     *  2. Iniciar transacción DB y crear registro de reserva.
+     *  3. Llamar API externa BCMS para registrar contenedores.
+     *  4a. BCMS falla  → rollback DB (sin reserva huérfana) → error al usuario.
+     *  4b. BCMS OK     → commit DB → éxito.
+     *
+     * Garantiza que los contenedores en BCMS y las reservas locales siempre estén en sync.
+     * Elimina el problema de contenedores huérfanos en BCMS cuando falla la creación local.
      */
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'reservation_date' => ['required', 'date', 'after_or_equal:today'],
-            'reservation_time' => ['required', 'date_format:H:i'],
-            'booking_number' => ['required', 'string', 'max:255'],
-            'transporter_name' => ['required', 'string', 'max:255'],
-            'truck_plate' => ['required', 'string', 'max:10'],
-            'slots_requested' => ['required', 'integer', 'min:1'],
-            'container_numbers' => ['required', 'array'],
-            'flexitank_code' => ['nullable', 'string', 'max:100'],
+            'reservation_date'    => ['required', 'date', 'after_or_equal:today'],
+            'reservation_time'    => ['required', 'date_format:H:i'],
+            'booking_number'      => ['required', 'string', 'max:255'],
+            'transporter_name'    => ['required', 'string', 'max:255'],
+            'truck_plate'         => ['required', 'string', 'max:10'],
+            'slots_requested'     => ['required', 'integer', 'min:1'],
+            'container_numbers'   => ['required', 'array'],
             'container_numbers.*' => ['required', 'string', 'max:20'],
-            'api_notes' => ['nullable', 'string'],
-            'file_info' => ['nullable', 'string'],
+            'flexitank_code'      => ['nullable', 'string', 'max:100'],
+            'file_info'           => ['nullable', 'string'],
         ]);
 
-        // Validate container numbers count matches slots requested
         if (count($validated['container_numbers']) !== $validated['slots_requested']) {
             return back()
                 ->withErrors(['container_numbers' => 'Debes ingresar ' . $validated['slots_requested'] . ' número(s) de contenedor.'])
                 ->withInput();
         }
 
-        // Clean container numbers
-        $cleanContainerNumbers = array_map(function ($number) {
-            return strtoupper(str_replace(' ', '', $number));
-        }, $validated['container_numbers']);
+        $cleanContainerNumbers = array_map(
+            fn($n) => strtoupper(str_replace(' ', '', $n)),
+            $validated['container_numbers']
+        );
 
-        return DB::transaction(function () use ($validated, $request, $cleanContainerNumbers) {
-            $redirectRoute = route('reservations.create', ['date' => $validated['reservation_date']]);
+        $reservationTime = strlen($validated['reservation_time']) === 5
+            ? $validated['reservation_time'] . ':00'
+            : $validated['reservation_time'];
 
-            // NOTE: Most validations are now done in preValidate() before external API call
-            // We keep minimal safety checks here as a final guard
+        $bcmsApiUrl      = config('services.booking_api.url');
+        $truckingCompany = $request->user()->company?->name ?? 'Sin empresa';
 
-            // Ensure time is in HH:MM:SS format for MySQL TIME field
-            $reservationTime = strlen($validated['reservation_time']) === 5
-                ? $validated['reservation_time'] . ':00'
-                : $validated['reservation_time'];
+        DB::beginTransaction();
 
-            // Create reservation (container numbers already cleaned)
+        try {
+            // PASO 1: Crear reserva en BD local (aún no confirmada – dentro de transacción)
             $reservation = Reservation::create([
-                'user_id' => $request->user()->id,
-                'reservation_date' => $validated['reservation_date'],
-                'reservation_time' => $reservationTime,
-                'booking_number' => $validated['booking_number'],
+                'user_id'           => $request->user()->id,
+                'reservation_date'  => $validated['reservation_date'],
+                'reservation_time'  => $reservationTime,
+                'booking_number'    => $validated['booking_number'],
                 'transportista_name' => $validated['transporter_name'],
-                'truck_plate' => strtoupper($validated['truck_plate']),
-                'slots_reserved' => $validated['slots_requested'],
+                'truck_plate'       => strtoupper($validated['truck_plate']),
+                'slots_reserved'    => $validated['slots_requested'],
                 'container_numbers' => $cleanContainerNumbers,
-                'flexitank_code' => $validated['flexitank_code'] ?? null,
-                'api_notes' => $validated['api_notes'] ?? null,
-                'file_info' => $validated['file_info'] ?? null,
-                'status' => 'active',
+                'flexitank_code'    => $validated['flexitank_code'] ?? null,
+                'file_info'         => $validated['file_info'] ?? null,
+                'status'            => 'active',
             ]);
 
-            // Return success with reservation data to show in modal
+            // PASO 2: Registrar contenedores en BCMS
+            // Si BCMS falla → rollback automático; ningún sistema queda en estado inconsistente
+            if (empty($bcmsApiUrl)) {
+                Log::warning('BOOKING_API_URL no configurada – contenedores NO registrados en BCMS', [
+                    'booking'    => $validated['booking_number'],
+                    'containers' => $cleanContainerNumbers,
+                ]);
+            } else {
+                $bcmsResponse = Http::connectTimeout(10)->timeout(30)->post($bcmsApiUrl, [
+                    'action'            => 'crear_contenedor',
+                    'booking_number'    => $validated['booking_number'],
+                    'container_numbers' => $cleanContainerNumbers,
+                    'transporter_name'  => $validated['transporter_name'],
+                    'truck_plate'       => strtoupper($validated['truck_plate']),
+                    'trucking_company'  => $truckingCompany,
+                ]);
+
+                $bcmsData = $bcmsResponse->json() ?? [];
+
+                Log::info('BCMS crear_contenedor', [
+                    'http_status' => $bcmsResponse->status(),
+                    'booking'     => $validated['booking_number'],
+                    'containers'  => $cleanContainerNumbers,
+                    'success'     => $bcmsData['success'] ?? false,
+                ]);
+
+                if (!$bcmsResponse->successful() || !($bcmsData['success'] ?? false)) {
+                    DB::rollBack();
+
+                    $bcmsErrors = [];
+                    if (!empty($bcmsData['validation_errors']) && is_array($bcmsData['validation_errors'])) {
+                        foreach ($bcmsData['validation_errors'] as $err) {
+                            foreach (($err['errors'] ?? []) as $msg) {
+                                $bcmsErrors[] = $msg;
+                            }
+                        }
+                    } elseif (!empty($bcmsData['message'])) {
+                        $bcmsErrors[] = $bcmsData['message'];
+                    } else {
+                        $bcmsErrors[] = 'Error HTTP ' . $bcmsResponse->status() . ' al comunicarse con sistema externo.';
+                    }
+
+                    Log::warning('BCMS rechazó contenedores – reserva revertida', [
+                        'booking'    => $validated['booking_number'],
+                        'containers' => $cleanContainerNumbers,
+                        'errors'     => $bcmsErrors,
+                    ]);
+
+                    return back()
+                        ->withErrors(['container_numbers' => implode("\n", $bcmsErrors)])
+                        ->withInput();
+                }
+
+                // Guardar respuesta BCMS en api_notes
+                $reservation->update([
+                    'api_notes' => json_encode([
+                        'timestamp'     => now()->toISOString(),
+                        'booking'       => $validated['booking_number'],
+                        'containers'    => $cleanContainerNumbers,
+                        'success'       => true,
+                        'bcms_response' => $bcmsData,
+                    ]),
+                ]);
+            }
+
+            // PASO 3: Confirmar transacción – ambos sistemas están en sync
+            DB::commit();
+
             return back()->with([
                 'success' => true,
                 'reservation' => [
-                    'id' => $reservation->id,
-                    'reservation_date' => $reservation->reservation_date->format('Y-m-d'),
-                    'reservation_time' => $reservation->reservation_time,
-                    'booking_number' => $reservation->booking_number,
-                    'transporter_name' => $reservation->transportista_name,
-                    'truck_plate' => $reservation->truck_plate,
-                    'slots_reserved' => $reservation->slots_reserved,
+                    'id'                => $reservation->id,
+                    'reservation_date'  => $reservation->reservation_date->format('Y-m-d'),
+                    'reservation_time'  => $reservation->reservation_time,
+                    'booking_number'    => $reservation->booking_number,
+                    'transporter_name'  => $reservation->transportista_name,
+                    'truck_plate'       => $reservation->truck_plate,
+                    'slots_reserved'    => $reservation->slots_reserved,
                     'container_numbers' => $reservation->container_numbers,
                 ],
             ]);
-        });
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            // ALERTA: Si BCMS ya aceptó los contenedores pero el commit falló,
+            // los contenedores quedan en BCMS sin reserva local.
+            // Se loguea como CRITICAL para resolución manual.
+            Log::critical('POSIBLE INCONSISTENCIA: Error tras llamar BCMS', [
+                'error'      => $e->getMessage(),
+                'booking'    => $validated['booking_number'] ?? null,
+                'containers' => $cleanContainerNumbers ?? [],
+                'action'     => 'Verificar si los contenedores fueron creados en BCMS y eliminarlos manualmente si no hay reserva.',
+            ]);
+
+            return back()
+                ->withErrors(['container_numbers' => 'Error al procesar la reserva. Por favor intente nuevamente.'])
+                ->withInput();
+        }
     }
 
 

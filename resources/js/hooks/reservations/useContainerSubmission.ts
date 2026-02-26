@@ -112,42 +112,96 @@ export const useContainerSubmission = () => {
             c.toUpperCase().replace(/\s/g, ''),
         );
 
+        // Validar que tengamos la URL de la API
+        if (!data.apiUrl || data.apiUrl.trim() === '') {
+            console.error('❌ URL de API externa no configurada');
+            errors.push(
+                'Error de configuración: URL de API externa no disponible',
+            );
+            setValidation({
+                valid: false,
+                message: 'Error de configuración',
+                validating: false,
+                errors: errors,
+            });
+            return { success: false, notes: '', errors };
+        }
+
         try {
+            // Preparar el payload completo
+            const payload = {
+                action: 'crear_contenedor',
+                booking_number: data.booking_number,
+                container_numbers: cleanContainerNumbers,
+                transporter_name: data.transporter_name,
+                truck_plate: data.truck_plate.toUpperCase(),
+                trucking_company: data.trucking_company,
+            };
+
             console.log('📤 Enviando contenedores a API externa:', {
                 url: data.apiUrl,
-                booking: data.booking_number,
-                containers: cleanContainerNumbers,
+                payload: payload,
+                payloadSize: JSON.stringify(payload).length + ' bytes',
             });
 
             const response = await fetch(data.apiUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    action: 'crear_contenedor',
-                    booking_number: data.booking_number,
-                    container_numbers: cleanContainerNumbers,
-                    transporter_name: data.transporter_name,
-                    truck_plate: data.truck_plate.toUpperCase(),
-                    trucking_company: data.trucking_company,
-                }),
+                body: JSON.stringify(payload),
             });
 
             console.log('📥 Respuesta API externa:', {
                 status: response.status,
                 statusText: response.statusText,
                 ok: response.ok,
+                headers: {
+                    'content-type': response.headers.get('content-type'),
+                },
             });
 
             // Validar HTTP status primero
             if (!response.ok) {
+                // Intentar leer el cuerpo de la respuesta para más detalles
+                let errorBody = '';
+                try {
+                    const textBody = await response.text();
+                    errorBody = textBody;
+                    console.error('❌ HTTP Error Body:', textBody);
+                } catch {
+                    console.error('❌ No se pudo leer el cuerpo del error');
+                }
+
                 console.error(
                     '❌ HTTP Error:',
                     response.status,
                     response.statusText,
+                    'Body:',
+                    errorBody,
                 );
-                errors.push(
-                    `Error HTTP ${response.status}: ${response.statusText}`,
-                );
+
+                // Si hay un mensaje de error en el body, incluirlo
+                if (errorBody) {
+                    try {
+                        const errorJson = JSON.parse(errorBody);
+                        if (errorJson.message || errorJson.error) {
+                            errors.push(errorJson.message || errorJson.error);
+                        } else {
+                            errors.push(
+                                `Error HTTP ${response.status}: ${response.statusText}`,
+                            );
+                        }
+                    } catch {
+                        errors.push(
+                            `Error HTTP ${response.status}: ${errorBody.substring(0, 200)}`,
+                        );
+                    }
+                } else {
+                    errors.push(
+                        `Error HTTP ${response.status}: ${response.statusText}`,
+                    );
+                }
+
+                return { success: false, notes: '', errors };
             }
 
             const json = await response.json();

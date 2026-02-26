@@ -79,7 +79,7 @@ class UserController extends Controller
             'rut' => ['required', 'string', 'max:12', 'unique:users'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'string', 'min:8'],
-            'role' => ['required', Rule::in(['admin', 'transportista'])],
+            'role' => ['required', Rule::in(['admin', 'transportista', 'consulta'])],
             'company_id' => ['nullable', 'exists:companies,id'],
         ]);
 
@@ -121,7 +121,7 @@ class UserController extends Controller
             'rut' => ['required', 'string', 'max:12', Rule::unique('users')->ignore($user->id)],
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
             'password' => ['nullable', 'string', 'min:8'],
-            'role' => ['required', Rule::in(['admin', 'transportista'])],
+            'role' => ['required', Rule::in(['admin', 'transportista', 'consulta'])],
             'company_id' => ['nullable', 'exists:companies,id'],
         ]);
 

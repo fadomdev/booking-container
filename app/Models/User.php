@@ -84,4 +84,28 @@ class User extends Authenticatable
     {
         return $this->role === 'transportista';
     }
+
+    /**
+     * Check if user is consulta (read-only admin).
+     */
+    public function isConsulta(): bool
+    {
+        return $this->role === 'consulta';
+    }
+
+    /**
+     * Check if user has admin panel access (admin or consulta).
+     */
+    public function hasAdminAccess(): bool
+    {
+        return $this->isAdmin() || $this->isConsulta();
+    }
+
+    /**
+     * Check if user can modify data (only admin).
+     */
+    public function canModify(): bool
+    {
+        return $this->isAdmin();
+    }
 }

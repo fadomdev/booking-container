@@ -8,7 +8,6 @@ import { DateTimeStep } from '@/components/reservations/steps/DateTimeStep';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useBookingValidation } from '@/hooks/reservations/useBookingValidation';
-import { useContainerSubmission } from '@/hooks/reservations/useContainerSubmission';
 import { usePlateHistory } from '@/hooks/reservations/usePlateHistory';
 import AppLayout from '@/layouts/app-layout';
 import { RESERVATION_STEPS } from '@/lib/reservations/constants';
@@ -24,7 +23,6 @@ interface Props {
     blockedDates?: string[];
     isBlocked?: boolean;
     blockReason?: string;
-    containerApiUrl?: string;
 }
 
 export default function CreateReservation({
@@ -32,7 +30,6 @@ export default function CreateReservation({
     selectedDate,
     isBlocked = false,
     blockReason = '',
-    containerApiUrl = '',
 }: Props) {
     // Wizard steps state
     const [currentStep, setCurrentStep] = useState(1);
@@ -48,8 +45,6 @@ export default function CreateReservation({
     // Custom hooks
     const { validation: bookingValidation, validateBooking } =
         useBookingValidation();
-    const { validation: containerValidation, submitContainers } =
-        useContainerSubmission();
     const { history: plateHistory, saveToHistory: savePlateToHistory } =
         usePlateHistory();
 
@@ -105,7 +100,6 @@ export default function CreateReservation({
         truck_plate: '',
         slots_requested: 1,
         container_numbers: [''],
-        api_notes: '',
         file_info: '',
         flexitank_code: '',
     });
@@ -196,9 +190,10 @@ export default function CreateReservation({
 
         setIsSubmitting(true);
         clearErrors();
+        setContainerExistsError(null);
 
-        // VALIDACIÓN CRÍTICA: Verificar capacidad disponible ANTES de enviar a API externa
-        // Esto previene contenedores huérfanos si Laravel rechaza la reserva después
+        // Pre-validar localmente: fecha, horario, capacidad y formato de contenedores
+        // La llamada a la API externa (BCMS) ocurre ahora en el backend Laravel
         try {
             const prevalidationResponse = await axios.post(
                 '/reservations/pre-validate',
@@ -232,60 +227,30 @@ export default function CreateReservation({
             return;
         }
 
-        // Send containers to API using the hook
-        const result = await submitContainers({
-            booking_number: data.booking_number,
-            container_numbers: data.container_numbers.map((c) =>
-                c.toUpperCase().replace(/\s/g, ''),
-            ),
-            transporter_name: data.transporter_name,
-            truck_plate: data.truck_plate,
-            trucking_company:
-                page.props.auth.user.company?.name || 'Sin empresa',
-            apiUrl: containerApiUrl,
-        });
-
-        // Si hubo un error al guardar los contenedores, no continuar con la reserva
-        if (!result.success) {
-            console.error(
-                '❌ Error al guardar contenedores en API externa:',
-                result.errors,
-            );
-            // Mostrar errores de contenedores que ya existen u otros errores de la API
-            setContainerExistsError({
-                container_numbers: result.errors.join('\n'),
-            });
-            setIsSubmitting(false);
-            return;
-        }
-
-        console.log('✅ Contenedores guardados en API externa exitosamente');
-
-        // Create complete data object with api_notes and file_info
-        const submissionData = {
-            ...data,
-            api_notes: result.notes,
-            file_info: bookingValidation.fileInfo || '',
-            flexitank_code: bookingValidation.flexitank_code,
-        };
-
-        // Submit directly using Inertia router
-        router.post('/reservations', submissionData, {
-            preserveScroll: true,
-            onSuccess: () => {
-                setIsSubmitting(false);
+        // Enviar al backend: Laravel crea la reserva Y llama a BCMS en la misma operación atómica.
+        // Si BCMS falla, el backend hace rollback y retorna el error sin crear la reserva.
+        router.post(
+            '/reservations',
+            {
+                ...data,
+                file_info: bookingValidation.fileInfo || '',
+                flexitank_code: bookingValidation.flexitank_code || '',
             },
-            onError: (errors) => {
-                setContainerExistsError(
-                    errors.container_numbers
-                        ? {
-                              container_numbers: errors.container_numbers,
-                          }
-                        : null,
-                );
-                setIsSubmitting(false);
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    setIsSubmitting(false);
+                },
+                onError: (errors) => {
+                    setContainerExistsError(
+                        errors.container_numbers
+                            ? { container_numbers: errors.container_numbers }
+                            : null,
+                    );
+                    setIsSubmitting(false);
+                },
             },
-        });
+        );
     };
 
     // Show success modal on flash success
@@ -478,7 +443,11 @@ export default function CreateReservation({
                     {currentStep === 4 && (
                         <ConfirmationStep
                             data={data}
-                            containerValidation={containerValidation}
+                            containerValidation={{
+                                validating: isSubmitting,
+                                message:
+                                    'Registrando contenedores en el sistema externo...',
+                            }}
                             errors={containerExistsError}
                         />
                     )}

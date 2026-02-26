@@ -35,7 +35,7 @@ export interface User {
     name: string;
     rut?: string;
     email: string;
-    role: 'admin' | 'transportista';
+    role: 'admin' | 'transportista' | 'consulta';
     avatar?: string;
     email_verified_at: string | null;
     two_factor_enabled?: boolean;

@@ -25,6 +25,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import { useCanModify } from '@/hooks/use-can-modify';
 import AppLayout from '@/layouts/app-layout';
 import { Company, PaginatedData } from '@/types';
 import { Head, Link, router, useForm } from '@inertiajs/react';
@@ -48,6 +49,7 @@ interface Props {
 }
 
 export default function CompaniesIndex({ companies, filters = {} }: Props) {
+    const canModify = useCanModify();
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [selectedCompany, setSelectedCompany] = useState<Company | null>(
         null,
@@ -112,12 +114,14 @@ export default function CompaniesIndex({ companies, filters = {} }: Props) {
                             Gestiona las empresas del sistema
                         </p>
                     </div>
-                    <Button asChild>
-                        <Link href="/admin/companies/create">
-                            <Plus className="mr-2 h-4 w-4" />
-                            Nueva Empresa
-                        </Link>
-                    </Button>
+                    {canModify && (
+                        <Button asChild>
+                            <Link href="/admin/companies/create">
+                                <Plus className="mr-2 h-4 w-4" />
+                                Nueva Empresa
+                            </Link>
+                        </Button>
+                    )}
                 </div>
 
                 {/* Filtros */}
@@ -186,12 +190,14 @@ export default function CompaniesIndex({ companies, filters = {} }: Props) {
                         <p className="mb-4 text-sm text-muted-foreground">
                             No hay empresas registradas
                         </p>
-                        <Button asChild>
-                            <Link href="/admin/companies/create">
-                                <Plus className="mr-2 h-4 w-4" />
-                                Nueva Empresa
-                            </Link>
-                        </Button>
+                        {canModify && (
+                            <Button asChild>
+                                <Link href="/admin/companies/create">
+                                    <Plus className="mr-2 h-4 w-4" />
+                                    Nueva Empresa
+                                </Link>
+                            </Button>
+                        )}
                     </div>
                 ) : (
                     <>
@@ -205,7 +211,9 @@ export default function CompaniesIndex({ companies, filters = {} }: Props) {
                                         <TableHead>Email</TableHead>
                                         <TableHead>Usuarios</TableHead>
                                         <TableHead>Estado</TableHead>
-                                        <TableHead>Acciones</TableHead>
+                                        {canModify && (
+                                            <TableHead>Acciones</TableHead>
+                                        )}
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -245,48 +253,50 @@ export default function CompaniesIndex({ companies, filters = {} }: Props) {
                                                         : 'Inactiva'}
                                                 </Badge>
                                             </TableCell>
-                                            <TableCell>
-                                                <div className="flex gap-2">
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        onClick={() =>
-                                                            toggleStatus(
-                                                                company,
-                                                            )
-                                                        }
-                                                        title={
-                                                            company.is_active
-                                                                ? 'Desactivar'
-                                                                : 'Activar'
-                                                        }
-                                                    >
-                                                        <Power className="h-4 w-4" />
-                                                    </Button>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        asChild
-                                                    >
-                                                        <Link
-                                                            href={`/admin/companies/${company.id}/edit`}
+                                            {canModify && (
+                                                <TableCell>
+                                                    <div className="flex gap-2">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={() =>
+                                                                toggleStatus(
+                                                                    company,
+                                                                )
+                                                            }
+                                                            title={
+                                                                company.is_active
+                                                                    ? 'Desactivar'
+                                                                    : 'Activar'
+                                                            }
                                                         >
-                                                            <Edit className="h-4 w-4" />
-                                                        </Link>
-                                                    </Button>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        onClick={() =>
-                                                            openDeleteDialog(
-                                                                company,
-                                                            )
-                                                        }
-                                                    >
-                                                        <Trash2 className="h-4 w-4 text-destructive" />
-                                                    </Button>
-                                                </div>
-                                            </TableCell>
+                                                            <Power className="h-4 w-4" />
+                                                        </Button>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            asChild
+                                                        >
+                                                            <Link
+                                                                href={`/admin/companies/${company.id}/edit`}
+                                                            >
+                                                                <Edit className="h-4 w-4" />
+                                                            </Link>
+                                                        </Button>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={() =>
+                                                                openDeleteDialog(
+                                                                    company,
+                                                                )
+                                                            }
+                                                        >
+                                                            <Trash2 className="h-4 w-4 text-destructive" />
+                                                        </Button>
+                                                    </div>
+                                                </TableCell>
+                                            )}
                                         </TableRow>
                                     ))}
                                 </TableBody>

@@ -7,6 +7,7 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import { useCanModify } from '@/hooks/use-can-modify';
 import AppLayout from '@/layouts/app-layout';
 import { BlockedDate, PaginatedData } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
@@ -17,6 +18,8 @@ interface Props {
 }
 
 export default function BlockedDatesIndex({ blockedDates }: Props) {
+    const canModify = useCanModify();
+
     const handleDelete = (id: number) => {
         if (confirm('¿Estás seguro de eliminar esta fecha bloqueada?')) {
             router.delete(`/admin/blocked-dates/${id}`);
@@ -62,12 +65,14 @@ export default function BlockedDatesIndex({ blockedDates }: Props) {
                         </p>
                     </div>
                     <div className="flex gap-2">
-                        <Button asChild>
-                            <Link href="/admin/blocked-dates/create">
-                                <Plus className="mr-2 h-4 w-4" />
-                                Bloquear Fecha
-                            </Link>
-                        </Button>
+                        {canModify && (
+                            <Button asChild>
+                                <Link href="/admin/blocked-dates/create">
+                                    <Plus className="mr-2 h-4 w-4" />
+                                    Bloquear Fecha
+                                </Link>
+                            </Button>
+                        )}
                     </div>
                 </div>
 
@@ -81,12 +86,14 @@ export default function BlockedDatesIndex({ blockedDates }: Props) {
                             <p className="mb-4 text-sm text-muted-foreground">
                                 Agrega fechas festivas o de mantenimiento
                             </p>
-                            <Button asChild>
-                                <Link href="/admin/blocked-dates/create">
-                                    <Plus className="mr-2 h-4 w-4" />
-                                    Bloquear Fecha
-                                </Link>
-                            </Button>
+                            {canModify && (
+                                <Button asChild>
+                                    <Link href="/admin/blocked-dates/create">
+                                        <Plus className="mr-2 h-4 w-4" />
+                                        Bloquear Fecha
+                                    </Link>
+                                </Button>
+                            )}
                         </CardContent>
                     </Card>
                 ) : (
@@ -135,39 +142,43 @@ export default function BlockedDatesIndex({ blockedDates }: Props) {
                                     </div>
 
                                     <div className="flex gap-2 border-t pt-2">
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() =>
-                                                toggleStatus(blocked.id)
-                                            }
-                                        >
-                                            {blocked.is_active ? (
-                                                <EyeOff className="h-4 w-4" />
-                                            ) : (
-                                                <Eye className="h-4 w-4" />
-                                            )}
-                                        </Button>
-                                        <Button
-                                            asChild
-                                            variant="ghost"
-                                            size="sm"
-                                        >
-                                            <Link
-                                                href={`/admin/blocked-dates/${blocked.id}/edit`}
-                                            >
-                                                <Pencil className="h-4 w-4" />
-                                            </Link>
-                                        </Button>
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() =>
-                                                handleDelete(blocked.id)
-                                            }
-                                        >
-                                            <Trash2 className="h-4 w-4 text-destructive" />
-                                        </Button>
+                                        {canModify && (
+                                            <>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() =>
+                                                        toggleStatus(blocked.id)
+                                                    }
+                                                >
+                                                    {blocked.is_active ? (
+                                                        <EyeOff className="h-4 w-4" />
+                                                    ) : (
+                                                        <Eye className="h-4 w-4" />
+                                                    )}
+                                                </Button>
+                                                <Button
+                                                    asChild
+                                                    variant="ghost"
+                                                    size="sm"
+                                                >
+                                                    <Link
+                                                        href={`/admin/blocked-dates/${blocked.id}/edit`}
+                                                    >
+                                                        <Pencil className="h-4 w-4" />
+                                                    </Link>
+                                                </Button>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() =>
+                                                        handleDelete(blocked.id)
+                                                    }
+                                                >
+                                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                                </Button>
+                                            </>
+                                        )}
                                     </div>
                                 </CardContent>
                             </Card>

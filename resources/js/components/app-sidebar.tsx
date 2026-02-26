@@ -29,6 +29,8 @@ export function AppSidebar() {
     const page = usePage();
     const auth = page.props.auth as { user: { role: string } };
     const isAdmin = auth?.user?.role === 'admin';
+    const hasAdminAccess =
+        auth?.user?.role === 'admin' || auth?.user?.role === 'consulta';
 
     const navGroups: NavGroup[] = [
         {
@@ -43,7 +45,7 @@ export function AppSidebar() {
         },
     ];
 
-    if (isAdmin) {
+    if (hasAdminAccess) {
         navGroups.push({
             title: 'Administración',
             items: [

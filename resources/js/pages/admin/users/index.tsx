@@ -17,6 +17,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import { useCanModify } from '@/hooks/use-can-modify';
 import AppLayout from '@/layouts/app-layout';
 import { PaginatedData, User } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
@@ -33,6 +34,7 @@ interface Props {
 }
 
 export default function UsersIndex({ users, filters = {} }: Props) {
+    const canModify = useCanModify();
     const [searchTerm, setSearchTerm] = useState(filters.search || '');
     const [roleFilter, setRoleFilter] = useState(filters.role || 'all');
     const [companyFilter, setCompanyFilter] = useState(filters.company || '');
@@ -73,12 +75,14 @@ export default function UsersIndex({ users, filters = {} }: Props) {
                             Administra los usuarios del sistema
                         </p>
                     </div>
-                    <Button asChild>
-                        <Link href="/admin/users/create">
-                            <PlusCircle className="mr-2 h-4 w-4" />
-                            Nuevo Usuario
-                        </Link>
-                    </Button>
+                    {canModify && (
+                        <Button asChild>
+                            <Link href="/admin/users/create">
+                                <PlusCircle className="mr-2 h-4 w-4" />
+                                Nuevo Usuario
+                            </Link>
+                        </Button>
+                    )}
                 </div>
 
                 {/* Filtros */}
@@ -138,6 +142,9 @@ export default function UsersIndex({ users, filters = {} }: Props) {
                                         <SelectItem value="transportista">
                                             Transportista
                                         </SelectItem>
+                                        <SelectItem value="consulta">
+                                            Consulta
+                                        </SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -161,12 +168,14 @@ export default function UsersIndex({ users, filters = {} }: Props) {
                         <p className="mb-4 text-sm text-muted-foreground">
                             No hay usuarios registrados
                         </p>
-                        <Button asChild>
-                            <Link href="/admin/users/create">
-                                <PlusCircle className="mr-2 h-4 w-4" />
-                                Nuevo Usuario
-                            </Link>
-                        </Button>
+                        {canModify && (
+                            <Button asChild>
+                                <Link href="/admin/users/create">
+                                    <PlusCircle className="mr-2 h-4 w-4" />
+                                    Nuevo Usuario
+                                </Link>
+                            </Button>
+                        )}
                     </div>
                 ) : (
                     <>
@@ -186,9 +195,11 @@ export default function UsersIndex({ users, filters = {} }: Props) {
                                             <TableHead>
                                                 Fecha Creación
                                             </TableHead>
-                                            <TableHead className="text-right">
-                                                Acciones
-                                            </TableHead>
+                                            {canModify && (
+                                                <TableHead className="text-right">
+                                                    Acciones
+                                                </TableHead>
+                                            )}
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -212,12 +223,18 @@ export default function UsersIndex({ users, filters = {} }: Props) {
                                                             user.role ===
                                                             'admin'
                                                                 ? 'default'
-                                                                : 'secondary'
+                                                                : user.role ===
+                                                                    'consulta'
+                                                                  ? 'outline'
+                                                                  : 'secondary'
                                                         }
                                                     >
                                                         {user.role === 'admin'
                                                             ? 'Admin'
-                                                            : 'Transportista'}
+                                                            : user.role ===
+                                                                'consulta'
+                                                              ? 'Consulta'
+                                                              : 'Transportista'}
                                                     </Badge>
                                                 </TableCell>
                                                 <TableCell>
@@ -227,32 +244,34 @@ export default function UsersIndex({ users, filters = {} }: Props) {
                                                         'es-CL',
                                                     )}
                                                 </TableCell>
-                                                <TableCell className="text-right">
-                                                    <div className="flex justify-end gap-2">
-                                                        <Button
-                                                            asChild
-                                                            variant="ghost"
-                                                            size="sm"
-                                                        >
-                                                            <Link
-                                                                href={`/admin/users/${user.id}/edit`}
+                                                {canModify && (
+                                                    <TableCell className="text-right">
+                                                        <div className="flex justify-end gap-2">
+                                                            <Button
+                                                                asChild
+                                                                variant="ghost"
+                                                                size="sm"
                                                             >
-                                                                <Pencil className="h-4 w-4" />
-                                                            </Link>
-                                                        </Button>
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            onClick={() =>
-                                                                handleDelete(
-                                                                    user.id,
-                                                                )
-                                                            }
-                                                        >
-                                                            <Trash2 className="h-4 w-4 text-destructive" />
-                                                        </Button>
-                                                    </div>
-                                                </TableCell>
+                                                                <Link
+                                                                    href={`/admin/users/${user.id}/edit`}
+                                                                >
+                                                                    <Pencil className="h-4 w-4" />
+                                                                </Link>
+                                                            </Button>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                onClick={() =>
+                                                                    handleDelete(
+                                                                        user.id,
+                                                                    )
+                                                                }
+                                                            >
+                                                                <Trash2 className="h-4 w-4 text-destructive" />
+                                                            </Button>
+                                                        </div>
+                                                    </TableCell>
+                                                )}
                                             </TableRow>
                                         ))}
                                     </TableBody>

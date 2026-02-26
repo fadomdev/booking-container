@@ -25,7 +25,7 @@ export default function CreateUser({ companies }: Props) {
         rut: '',
         email: '',
         password: '',
-        role: 'transportista' as 'admin' | 'transportista',
+        role: 'transportista' as 'admin' | 'transportista' | 'consulta',
         company_id: undefined as string | undefined,
     });
 
@@ -140,7 +140,10 @@ export default function CreateUser({ companies }: Props) {
                                     onValueChange={(value) =>
                                         setData(
                                             'role',
-                                            value as 'admin' | 'transportista',
+                                            value as
+                                                | 'admin'
+                                                | 'transportista'
+                                                | 'consulta',
                                         )
                                     }
                                 >
@@ -153,6 +156,9 @@ export default function CreateUser({ companies }: Props) {
                                         </SelectItem>
                                         <SelectItem value="admin">
                                             Administrador
+                                        </SelectItem>
+                                        <SelectItem value="consulta">
+                                            Consulta
                                         </SelectItem>
                                     </SelectContent>
                                 </Select>
